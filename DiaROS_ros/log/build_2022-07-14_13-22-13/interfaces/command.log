@@ -1,0 +1,6 @@
+Invoking command in '/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces': /usr/bin/cmake /home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces -DCMAKE_C_FLAGS=-fPIC -DCMAKE_INSTALL_PREFIX=/home/nishimura/program/moriSDS/DiaROS_ros/install/interfaces
+Invoked command in '/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces' returned '0': /usr/bin/cmake /home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces -DCMAKE_C_FLAGS=-fPIC -DCMAKE_INSTALL_PREFIX=/home/nishimura/program/moriSDS/DiaROS_ros/install/interfaces
+Invoking command in '/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces': /usr/bin/cmake --build /home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces -- -j48 -l48
+Invoked command in '/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces' returned '0': /usr/bin/cmake --build /home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces -- -j48 -l48
+Invoking command in '/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces': /usr/bin/cmake --install /home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces
+Invoked command in '/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces' returned '0': /usr/bin/cmake --install /home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces

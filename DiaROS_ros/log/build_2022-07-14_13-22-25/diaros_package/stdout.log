@@ -1,0 +1,77 @@
+running egg_info
+creating ../../build/diaros_package/diaros_package.egg-info
+writing ../../build/diaros_package/diaros_package.egg-info/PKG-INFO
+writing dependency_links to ../../build/diaros_package/diaros_package.egg-info/dependency_links.txt
+writing entry points to ../../build/diaros_package/diaros_package.egg-info/entry_points.txt
+writing requirements to ../../build/diaros_package/diaros_package.egg-info/requires.txt
+writing top-level names to ../../build/diaros_package/diaros_package.egg-info/top_level.txt
+writing manifest file '../../build/diaros_package/diaros_package.egg-info/SOURCES.txt'
+reading manifest file '../../build/diaros_package/diaros_package.egg-info/SOURCES.txt'
+writing manifest file '../../build/diaros_package/diaros_package.egg-info/SOURCES.txt'
+running build
+running build_py
+creating /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build
+creating /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib
+creating /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_rc.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_ss.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_nlg.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_dr.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/__init__.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_dm.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/listener.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_lu.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_sm.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/testModule.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/publisher.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+copying diaros_package/ros2_mm.py -> /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package
+running install
+running install_lib
+creating /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_rc.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_ss.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_nlg.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_dr.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/__init__.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_dm.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/listener.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_lu.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_sm.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/testModule.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/publisher.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+copying /home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/build/lib/diaros_package/ros2_mm.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_rc.py to ros2_rc.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_ss.py to ros2_ss.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_nlg.py to ros2_nlg.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_dr.py to ros2_dr.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/__init__.py to __init__.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_dm.py to ros2_dm.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/listener.py to listener.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_lu.py to ros2_lu.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_sm.py to ros2_sm.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/testModule.py to testModule.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/publisher.py to publisher.cpython-38.pyc
+byte-compiling /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package/ros2_mm.py to ros2_mm.cpython-38.pyc
+running install_data
+creating /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/ament_index
+creating /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/ament_index/resource_index
+creating /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/ament_index/resource_index/packages
+copying resource/diaros_package -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/ament_index/resource_index/packages
+copying package.xml -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/diaros_package
+copying launch/sdsmod.launch.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/diaros_package
+copying launch/test.launch.py -> /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/share/diaros_package
+running install_egg_info
+Copying ../../build/diaros_package/diaros_package.egg-info to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/python3.8/site-packages/diaros_package-0.0.0-py3.8.egg-info
+running install_scripts
+Installing dm script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing dr script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing lu script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing mm script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing nlg script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing pub script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing rc script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing relay script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing sm script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing ss script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+Installing sub script to /home/nishimura/program/moriSDS/DiaROS_ros/install/diaros_package/lib/diaros_package
+writing list of installed files to '/home/nishimura/program/moriSDS/DiaROS_ros/build/diaros_package/install.log'

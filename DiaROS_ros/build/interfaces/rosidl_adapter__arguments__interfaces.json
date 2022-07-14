@@ -1,0 +1,12 @@
+{
+  "package_name": "interfaces",
+  "non_idl_tuples": [
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/List.msg",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/Iasr.msg",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/Isa.msg",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/Irc.msg",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/Inlg.msg",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/Iss.msg",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/src/interfaces:msg/Imm.msg"
+  ]
+}

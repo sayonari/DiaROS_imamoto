@@ -1,0 +1,31 @@
+{
+  "package_name": "interfaces",
+  "output_dir": "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_typesupport_introspection_c/interfaces",
+  "template_dir": "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource",
+  "idl_tuples": [
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/List.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Iasr.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Isa.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Irc.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Inlg.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Iss.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Imm.idl"
+  ],
+  "target_dependencies": [
+    "/home/nishimura/ros2_foxy/ros2-linux/lib/rosidl_typesupport_introspection_c/rosidl_typesupport_introspection_c",
+    "/home/nishimura/ros2_foxy/ros2-linux/lib/python3.8/site-packages/rosidl_typesupport_introspection_c/__init__.py",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource/idl__rosidl_typesupport_introspection_c.h.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource/idl__type_support.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource/msg__rosidl_typesupport_introspection_c.h.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource/msg__type_support.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource/srv__rosidl_typesupport_introspection_c.h.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_typesupport_introspection_c/resource/srv__type_support.c.em",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/List.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Iasr.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Isa.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Irc.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Inlg.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Iss.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Imm.idl"
+  ]
+}

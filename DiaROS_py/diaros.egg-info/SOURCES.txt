@@ -1,0 +1,14 @@
+README.md
+setup.py
+diaros/__init__.py
+diaros/acousticAnalysis.py
+diaros/automaticSpeechRecognition.py
+diaros/dialogManagement.py
+diaros/googleSpeechAPI.py
+diaros/responseControl.py
+diaros/speechInput.py
+diaros/speechSynthesis.py
+diaros.egg-info/PKG-INFO
+diaros.egg-info/SOURCES.txt
+diaros.egg-info/dependency_links.txt
+diaros.egg-info/top_level.txt

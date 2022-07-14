@@ -1,0 +1,36 @@
+{
+  "package_name": "interfaces",
+  "output_dir": "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_generator_py/interfaces",
+  "template_dir": "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource",
+  "idl_tuples": [
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/List.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Iasr.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Isa.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Irc.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Inlg.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Iss.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces:msg/Imm.idl"
+  ],
+  "target_dependencies": [
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../../../lib/rosidl_generator_py/rosidl_generator_py",
+    "/home/nishimura/ros2_foxy/ros2-linux/lib/python3.8/site-packages/rosidl_generator_py/__init__.py",
+    "/home/nishimura/ros2_foxy/ros2-linux/lib/python3.8/site-packages/rosidl_generator_py/generate_py_impl.py",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_action_pkg_typesupport_entry_point.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_action.py.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_idl_pkg_typesupport_entry_point.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_idl_support.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_idl.py.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_msg_pkg_typesupport_entry_point.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_msg_support.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_msg.py.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_srv_pkg_typesupport_entry_point.c.em",
+    "/home/nishimura/ros2_foxy/ros2-linux/share/rosidl_generator_py/cmake/../resource/_srv.py.em",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/List.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Iasr.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Isa.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Irc.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Inlg.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Iss.idl",
+    "/home/nishimura/program/moriSDS/DiaROS_ros/build/interfaces/rosidl_adapter/interfaces/msg/Imm.idl"
+  ]
+}

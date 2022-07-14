@@ -1,0 +1,13 @@
+[console_scripts]
+dm = diaros_package.ros2_dm:main
+dr = diaros_package.ros2_dr:main
+lu = diaros_package.ros2_lu:main
+mm = diaros_package.ros2_mm:main
+nlg = diaros_package.ros2_nlg:main
+pub = diaros_package.publisher:main
+rc = diaros_package.ros2_rc:main
+relay = diaros_package.listener:main
+sm = diaros_package.ros2_sm:main
+ss = diaros_package.ros2_ss:main
+sub = diaros_package.testModule:main
+
