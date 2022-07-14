@@ -1,5 +1,5 @@
 # DiaROS
-**[English ver is HERE](README.md)**
+**[English ver is HERE](README_en.md)**
 
 ## Author
 西村良太 徳島大学  
@@ -108,14 +108,18 @@ $ pyenv global 3.8.13
 ## 3. 音声対話システムインストール
 
 ### 3.1 A3RTとGoogle APIのKey取得と配置 
-- A3RT　のAPIキーを取得
+A3RT talkAPIは，雑談応答生成用のチャットボットAPIです．  
+Google APIは，音声認識用のGoogle Speech-to-Text APIです．
+
+- A3RT talkAPIのAPIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/
 - テキストファイルにAPIキーをコピペし保存（APIキーのみ入ったテキストファイル）
 - テキストファイルを以下に設置（HOMEディレクトリは各自読み替えてね）
 ```
 /home/nishimura/secret/nishimura_A3RT_APIKEY.data
 ```
 
-- Google APIキーを作成し以下に設置
+- Google APIキーを作成し以下に設置（キーJSONファイル作成は，以下のページに従ってください）  
+https://cloud.google.com/speech-to-text/docs/before-you-begin?hl=ja
 ```
 /home/nishimura/secret/nishimura_SDS.json
 ```

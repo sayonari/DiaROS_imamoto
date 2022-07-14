@@ -1,5 +1,5 @@
 # DiaROS
-**[日本語バージョンはこちら](README_jp.md)**
+**[日本語バージョンはこちら](README.md)**
 
 ## Author
 Ryota Nishimura (Tokushima University)  
