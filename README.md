@@ -69,12 +69,7 @@ $ git clone https://github.com/pyenv/pyenv-update.git ~/.pyenv/plugins/pyenv-upd
 `PYTHONPATH`の設定は，pythonのデフォルトのモジュールインストール先と．--userでのモジュールインストール先を追記しておく．  
 pythonのバージョンなどに気をつける
 ```bash
-# .bash_profile
-
-# Get the aliases and functions
-if [ -f ~/.bashrc ]; then
-        . ~/.bashrc
-fi
+# .bashrc
 
 # for pyenv(python)
 export PYENV_ROOT="$HOME/.pyenv"
@@ -202,7 +197,7 @@ $ . ./install/local_setup.bash
 
 
 
-## 4. ダッシュボードインストール
+## 4. （まだバグってて動きません！）ダッシュボードインストール
 注意：以下，まだバグっており実現できません．nodejs,vue のモジュール周りのバージョンがうまく合わず，開発時の環境が再現できないため，動作しません．動かせた人がいたら教えてください(´；ω；｀)
 
 ### 4.1 npm インストール
