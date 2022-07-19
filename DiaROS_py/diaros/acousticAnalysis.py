@@ -14,17 +14,14 @@ f0_upper = 600.0
 class AcousticAnalysis:
     def __init__( self, rate ):
         self.rate = rate
-        self.pitch_o = pitch("fcomb", win_s, hop_s, rate)
-        self.pitch_o.set_unit("freq")
+        self.pitch_o = pitch("fcomb", win_s, hop_s, rate) # "fcomb"
+        self.pitch_o.set_unit("Hz")
         self.pitch_o.set_tolerance(tolerance)
         self.prev = 0.0
         self.count = 0
         self.f0_list = []
         self.zc_list = []
         self.grad = 0.0
-
-        self.confidence = 0.0
-        self.confidence_dec = 0.01
 
     def outputHarvest(self, inputs):
         signal = np.fromstring(inputs, dtype='int16')
@@ -49,13 +46,9 @@ class AcousticAnalysis:
         self.zc_list.append(zerocross)
 
         f0 = float(self.pitch_o(signal)[0])
-        self.confidence = self.pitch_o.get_confidence()
-        # if self.confidence < self.pitch_o.get_confidence(): self.confidence = self.pitch_o.get_confidence()
-        # self.confidence -= self.confidence_dec
-        
-        # if self.confidence < 0.8: f0 = 0.
+        confidence = self.pitch_o.get_confidence()
+        # if confidence < 0.8: f0 = 0.
         if f0 > f0_upper: f0 = 0.0
-
 
         self.f0_list.append(f0)
         if self.count == 30:
