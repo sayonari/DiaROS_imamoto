@@ -26,7 +26,7 @@ nishimura@is.tokushima-u.ac.jp
 
 
 ## 1. ROS2 Foxy をインストールする
-https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Binary.html
+https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Debians.html
 
 - 順番に実行していく
 - 問題なく終了し，テストも動くはずです．
@@ -302,9 +302,54 @@ ros2 run diaros_package mm # 管理ツール用
 
 
 
+## 6. ROS2の機能活用
+### 6.0 環境構築
+```bash
+$ python -m pip install PyQt5==5.12 PySide2 pydot
+$ pip3 uninstall PyQt5 # バージョンが混在して動かなくなるので，これでpip3版を消す！
+```
+https://ar-ray.hatenablog.com/entry/2021/03/10/203358
+
+
+### 6.1 rqt
+http://docs.ros.org/en/foxy/Concepts/About-RQt.html
+
+RQtは，QtベースのROS向けGUIフレームワークです．ros2 foxy には，標準で以下のrqtツールが含まれています．  
+（TAB補完による候補の表示）
+```
+$ ros2 run rqt[TAB]
+rqt                 rqt_gui             rqt_plot            rqt_reconfigure     rqt_top
+rqt_action          rqt_gui_cpp         rqt_publisher       rqt_service_caller  rqt_topic
+rqt_console         rqt_gui_py          rqt_py_common       rqt_shell           
+rqt_graph           rqt_msg             rqt_py_console      rqt_srv    
+```
+
+
+### 6.2 rqt_graph
+```
+$ ros2 run rpt_graph rqt_graph
+```
+
+### 6.3 rqt_plot
+```
+$ ros2 run rqt_plot rqt_plot
+```
+
+エラーが出て動かなかったら，apt-get upgrade でrosパッケージがアップグレードしましょう．
+```
+$ sudo apt-get update
+$ sudo apt-get upgrade
+
+$ python -m pip install --upgrade pydot pyqt5
+```
 
 
 
+### 6.x rqt_bag
+https://zenn.dev/techkind/articles/2106100906_ros2_rqt_bag
+
+rqt_bag コマンドにより，GUI表示によりトピックの流れを可視化することができます．
+ros2 foxy には標準では含まれていないツールなので，上記URLを参考にツールをインストールしましょう．
 
 
 
