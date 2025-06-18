@@ -303,11 +303,11 @@ class AutomaticSpeechRecognition:
                     diff = create_diff_list(last_sent, sentence)
                     colored = apply_color_to_diff(diff)
                     output = f'{elapsed_time:7.3f} ({process_time:5d} ms): {colored}'
-                    if last_sent != sentence:
-                        print(output)
-                    else:
-                        sys.stdout.write("\r" + output + " " * 20 + "\r")
-                        sys.stdout.flush()
+                    # if last_sent != sentence:
+                    #     print(output)
+                    # else:
+                    #     sys.stdout.write("\r" + output + " " * 20 + "\r")
+                    #     sys.stdout.flush()
                     self.word = sentence
                     self.is_final = True if sentence.strip() != "" else False
                     last_sent = sentence

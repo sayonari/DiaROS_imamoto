@@ -185,10 +185,13 @@ class DialogManagement:
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
                     else:
                         sys.stdout.write("[ERROR] static_response_archiveに音声ファイルがありません\n")
-                # ここでNLG用にASR結果をwordにセット
-                if self.asr["you"]:
-                    self.word = self.asr["you"]
-                    self.response_update = True
+                    # ここでNLG用にASR結果をwordにセット
+                    if self.asr["you"]:
+                        self.word = self.asr["you"]
+                        self.response_update = True
+                else:
+                    # 閾値未満の場合はresponse_updateをFalseにする
+                    self.response_update = False
                 last_handled_tt_time = tt_time
 
             # 応答音声再生終了後にフラグをリセット
@@ -597,7 +600,7 @@ class DialogManagement:
     def updateASR(self, asr):
         self.asr["you"] = asr["you"]
         self.asr["is_final"] = asr["is_final"]
-    
+
     def updateSA(self, sa):
         self.sa["prevgrad"] = sa["prevgrad"]
         self.sa["frequency"] = sa["frequency"]

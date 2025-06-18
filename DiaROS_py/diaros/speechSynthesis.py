@@ -251,6 +251,12 @@ class SpeechSynthesis():
             tts_file = './tmp/' + str(current_time) + '.wav'
             self.trim_wav(input_file, tts_file)
 
+            # ここで音声ファイルを再生
+            try:
+                playsound(tts_file, True)
+            except Exception as e:
+                print(f"playsound error: {e}")
+
             # 終了時間を記録
             end_time = datetime.now()
             # 処理時間を計算して表示
@@ -278,24 +284,8 @@ class SpeechSynthesis():
                     # self.prev_response_time = datetime.now() 
 
         except Exception as e:
-            # print('VOICEVOXerror: VOICEVOX sound is not generated. Do you launch VOICEVOX?')
-            # print(e.args)
-            # gooegle speech apiの発話終了判定確認用に無効化
-            pass
-
-        #GTTSパターン
-        # try:
-        #     tts = gTTS(text, lang=self.tl)
-        #     tts_file = './{}/cnt_{}.mp3'.format(self.TMP_DIR, datetime.now().microsecond)
-        #     tts.save(tts_file)
-        #     #現在時刻を表示
-        #     print("応答文再生開始刻："+datetime.now().strftime('%Y/%m/%d %H:%M:%S.%f')[:-3])
-                
-        #     playsound(tts_file, True)
-        #     os.remove(tts_file)
-        # except Exception as e:
-        #     print('gTTS error: TTS sound is not generated...')
-        #     print(e.args)
+            print('VOICEVOXerror: VOICEVOX sound is not generated. Do you launch VOICEVOX?')
+            print(e.args)
 
 if __name__ == "__main__":
     tts = SpeechSynthesis()

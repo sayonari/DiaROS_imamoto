@@ -20,10 +20,14 @@ class NaturalLanguageGeneration:
 
         sys.stdout.write('NaturalLanguageGeneration  start up.\n')
         sys.stdout.write('=====================================================\n')
+        # OpenAI APIキーを環境変数から設定
+        openai.api_key = os.environ.get("OPENAI_API_KEY")
 
     def update(self, query):
         self.query = query
         self.update_flag = True
+        sys.stdout.write(f"[NLG] update() called with query: {query}\n")
+        sys.stdout.flush()
 
 
     # def generate_dialogue(self, query):
@@ -43,7 +47,7 @@ class NaturalLanguageGeneration:
     #     return response_res
     
     def run(self):
-        DEBUG = False
+        DEBUG = True
         response_cnt = 0
         while True:
             if self.update_flag and self.query:
@@ -56,23 +60,28 @@ class NaturalLanguageGeneration:
                             sys.stdout.write('対話履歴作成\n')
                             sys.stdout.flush()
                             self.user_speak_is_final = True
-                            query.replace("user_speak_is_final", "", 1)
+                            query = query.replace("user_speak_is_final", "", 1)
                         if ":" in query:
                             response_cnt = int(query.split(":", 1)[0])
                             query = query.split(":", 1)[1]
+                        sys.stdout.write(f"[NLG] query: {query}\n")
+
                         text_input = query
+                        sys.stdout.write(f"[NLG] input {text_input}\n")
+                        sys.stdout.flush()
                         start_time = datetime.now()
                         role = "優しい性格のアンドロイドとして、相手を労るような返答を２０文字以内でしてください。"
-                        # gptのAPIキー
-                        res = openai.ChatCompletion.create(
+                        # openai>=1.0.0対応
+                        chat_response = openai.chat.completions.create(
                             model="gpt-3.5-turbo-0125",
                             messages=[
                                 {"role": "system","content": role},
                                 {"role": "user","content": text_input},
                             ],
                         )
-                        res = res["choices"][0]["message"]["content"]
-                        if DEBUG: sys.stdout.write(""+f"オリジナルの出力文" + res + "\n\n")
+                        res = chat_response.choices[0].message.content
+                        sys.stdout.write("[NLG生成文] " + res + "\n")
+                        sys.stdout.flush()
                         if ":" in res:
                             res = res.split(":", 1)[1]
                         if self.user_speak_is_final:
@@ -88,7 +97,9 @@ class NaturalLanguageGeneration:
                     print(f"[NLG生成文] {res}")
                     sys.stdout.flush()
                 except Exception as e:
-                    self.last_reply = f"不明なエラー：{e.args}"
+                    self.last_reply = ""  # エラー時はlast_replyを空にすることで音声合成に反映しない
+                    sys.stdout.write(f"[NLG ERROR] {e}\n")
+                    sys.stdout.flush()
                 self.update_flag = False
             # last_replyが空でない場合のみros2_natural_language_generation.pyで送信される
             time.sleep(0.01)
