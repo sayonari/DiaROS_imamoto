@@ -1,7 +1,3 @@
-# google-speech-apiに変更する 応答生成 Unity通信 パワーによる有声検出 音声ファイル長によるSPEAK制御 音声認識切り替え 認識結果>５文字なら対話生成する 何応答目かを音声ファイル名にして記憶し、Unityで読めるようにする 時刻ファイルに対応させる
-# 打ち切り応答＞話題提供
-# 応答＆相槌UDPアーカイブ３秒制限 ５秒以上の沈黙で強制応答
-# smの認識結果表示を無効化してる
 import sys
 import socket
 import time
@@ -163,10 +159,6 @@ class DialogManagement:
                     self.word = self.asr["you"]
                     self.response_update = True
                     self.prev_asr_you = self.asr["you"]
-                    # 追加: 履歴に追加
-                    self.asr_history.append(self.asr["you"])
-                    if len(self.asr_history) > 20:
-                        self.asr_history = self.asr_history[-20:]
                     sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
                     sys.stdout.flush()
                 else:
@@ -202,15 +194,14 @@ class DialogManagement:
                         sys.stdout.write(f"[TT] 合成音声再生 duration_sec={duration_sec}\n")
                         sys.stdout.flush()
                         playsound(wav_path, True)
+                        self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
-                        # 再生後はファイル名をリセット
                         self.latest_synth_filename = ""
                     else:
                         sys.stdout.write("[ERROR] 合成音声ファイル名がありません\n")
                 else:
-                    # 閾値未満の場合はresponse_updateをFalseにする
                     self.response_update = False
                 last_handled_tt_time = tt_time
             # 応答音声再生終了後にフラグをリセット
@@ -227,7 +218,6 @@ class DialogManagement:
                     now = time.time()
                     if not (is_playing_response and last_response_end_time is not None and now < last_response_end_time):
                         if probability >= turn_taking_threshold:
-                            # --- ここから修正 ---
                             if hasattr(self, 'latest_synth_filename') and self.latest_synth_filename:
                                 wav_path = self.latest_synth_filename
                                 try:
@@ -238,6 +228,7 @@ class DialogManagement:
                                 sys.stdout.write(f"[TT] 合成音声再生(pending) duration_sec={duration_sec}\n")
                                 sys.stdout.flush()
                                 playsound(wav_path, True)
+                                self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.latest_synth_filename = ""
                                 last_response_end_time = time.time() + duration_sec
                                 is_playing_response = True
@@ -252,6 +243,7 @@ class DialogManagement:
                                 sys.stdout.write(f"[TT] 再生音声長 duration_sec={duration_sec}\n")
                                 sys.stdout.flush()
                                 playsound(wav_path, True)
+                                self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.static_response_index += 1
                                 if self.static_response_index >= len(self.static_response_files):
                                     self.static_response_index = 0
@@ -260,7 +252,6 @@ class DialogManagement:
                                 next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
                             else:
                                 sys.stdout.write("[ERROR] static_response_archiveに音声ファイルがありません\n")
-                            # --- ここまで修正 ---
                     pending_tt_data = None
                     pending_tt_time = None
 
@@ -374,15 +365,7 @@ class DialogManagement:
                 if time_difference >= timedelta(seconds=self.system_response_length + 1.0): # システムが話し終わるまで応答しない
                     if DEBUG:sys.stdout.write('\n'+f"1.5秒の無音で応答した時刻{datetime.now()}\n")
                     if DEBUG:sys.stdout.flush()
-                    # self.word = carry+self.asr["you"]
-                    # 変数self.asr["you"]の内容からprevの内容を引いた内容を変数self.wordに代入する(apiの認識結果の初期化がされないときの暫定処置)
-                    # if self.asr["you"] != prev:
-                    #     self.word = self.asr["you"]
-                    # else:
-                    # 音声認識の長さが5文字以上であれば
-                    # sys.stdout.write('入力文：' + self.word + '\n')                    
-                    # Unityに応答信号を送信
-
+                    
                     # ./tmp/ ディレクトリ内の .wav ファイルを名前順にソート
                     filenames = sorted(glob.glob("./tmp/*.wav"))
 
@@ -458,197 +441,31 @@ class DialogManagement:
                 else:
                     self.additional_asr_start_time = datetime.now()
                     sys.stdout.write('\nadditional start' + '\n')
-            # ###---###
-            # try:
-            #     receive_data, addr = s.recvfrom(1024)
-            #     decoded_data = receive_data.decode('utf-8')
-            #     # print(f"受信したデータ: {decoded_data}")
-            # except BlockingIOError:
-            #     # if DEBUG:sys.stdout.write('\n'+f"例外発生No data received within the timeout period\n")
-            #     receive_data = None
-            #     decoded_data = None
-            #     # ノンブロッキングソケットでは、接続が即座に確立しない場合にこの例外が発生します。
-            #     pass
-            # if not receive_data:# データがなかった時
-            #     pass
-            # elif decoded_data.startswith("turn_taking:"): #ターンテイキングモデルからのデータを受信した瞬間
-            #     turn_taking_label = decoded_data[len("turn_taking:"):]
-            #     time_difference = datetime.now() - self.prev_response_time
-            #     if self.additional_asr_start_time == False and time_difference >= timedelta(seconds=self.system_response_length + 1.0) and turn_taking_label == "SPEAK": #ターンテイキングモデルからのデータが応答だったとき
-            #         # 上のif文から外した条件and self.speaking_time < datetime.now()
-            #         # if DEBUG:sys.stdout.write('\n'+f"ターンテイキングモデルからSPEAK判定を受信した時刻{datetime.now()}\n")
-            #         turn_taking_delay_start_time = datetime.now()
-            #         back_channel_threshold = back_channel_high_threshold
-            #     elif turn_taking_label == "STOP": #
-            #         back_channel_threshold = back_channel_low_threshold
-            #         # if DEBUG:sys.stdout.write('\n'+f"ターンテイキングモデルからSTOP判定を受信した時刻{datetime.now()}\n")
-            # elif decoded_data.startswith("back_channel_prediction:"): #バックチャネルモデルからのデータを受信した瞬間
-            #     back_channel_label = float(decoded_data[len("back_channel_prediction:"):])
-            #     time_difference = datetime.now() - self.prev_back_channel_time
-            #     if time_difference >= timedelta(seconds=self.back_channel_pause_length) and back_channel_label > back_channel_threshold:
-            #         time_difference = datetime.now() - self.prev_response_time
-            #         if time_difference >= timedelta(seconds=self.system_response_length + 0.5):
-            #             if DEBUG:sys.stdout.write('\n'+f"相槌を返す\n")
-            #             ###固定相槌再生パターン###
-            #             self.back_channel_cnt += 1
-            #             # if voice_available == False:
-            #             #     playsound(f"static_back_channel_{random.randint(1, 3)}.wav", True)
-            #             dummy = "dummy"
-            #             client.sendto(dummy.encode('utf-8'),(HOST,PORT))
-            #             self.prev_back_channel_time = datetime.now()
-            #             back_channel_limit = True # 連続で相槌を打たないように制限をかける
-            #         ##---###
-            #         # self.word = "dummy"
-            #         # prev = self.asr["you"]#システムが応答・相槌を返答する
-            #         # carry = carry + self.asr["you"]
-            #         # self.response_update = True
-            #     else:
-            #         #相槌打たずに待つ
-            #         back_channel_limit = False # 一度相槌を打たなければ制限解除
-            # if user_spoken == True and turn_taking_delay_start_time != False:
-            #     time_difference = datetime.now() - turn_taking_delay_start_time
-            #     if time_difference >= timedelta(seconds=turn_taking_response_delay_length): # SPEAK判定の0.9秒後に実際に応答を行う
-            #         turn_taking_delay_start_time = False # 過去0.7秒で少しでも話してたら棄却する
-            #         time_difference = datetime.now() - silent_start_time
-            #         if time_difference >= timedelta(seconds=turn_taking_response_delay_length - 0.2): # SPEAK判定が出てからずっと無声なら
-
-            #             ### 固定応答文再生パターン ###
-            #             # if datetime.now() - thread_start_time >= timedelta(seconds=3):playsound(f"static_response_archive/static_response_{random.randint(1, 12)}.wav", True)
-            #             ###---###
-
-            #             ### 応答生成パターン ###
-            #             # print("応答判定受信時刻："+datetime.now().strftime('%Y/%m/%d %H:%M:%S.%f')[:-3]) # 現在時刻を表示
-            #             sys.stdout.write('\n'+f"ターンテイキングモデルで応答を返す時刻{datetime.now()}\n")
-            #             # self.word = carry+self.asr["you"]
-            #             # 変数self.asr["you"]の内容からprevの内容を引いた内容を変数self.wordに代入する(apiの認識結果の初期化がされないときの暫定処置)
-            #             # if self.asr["you"] != prev:
-            #             #     self.word = self.asr["you"].replace(prev, '')
-            #             # else:
-            #             prev = self.asr["you"] # システムが応答・相槌を返答する
-            #             carry = ""
-            #             self.prev_response_time = datetime.now()
-
-            #             # ./tmp/ ディレクトリ内の .wav ファイルを名前順にソート
-            #             filenames = sorted(glob.glob("./tmp/*.wav"))
-
-            #             # 名前順で最新のファイル名を取得
-            #             latest_filename = filenames[-1] if filenames else ""
-            #             sys.stdout.write('\n最新の音声ファイル名' + latest_filename +  '\n')
-            #             sys.stdout.write('\n前回の音声ファイル名' + self.prev_response_filename +  '\n')
-            #             sys.stdout.flush()
-
-            #             # 最新のファイル名が self.prev_response_filename と異なる場合に限り、そのファイル名を出力
-            #             if latest_filename != self.prev_response_filename:
-            #                 self.prev_response_filename = latest_filename
-            #                 sys.stdout.write('\nターンテイキング' + latest_filename + '\n')
-            #                 # dummy_signalのファイルが存在するか確認
-            #                 try:
-            #                     with open(latest_filename, 'r'):
-            #                         # client.sendto(latest_filename.encode('utf-8'),(HOST,PORT))
-            #                         self.system_response_length = self.get_audio_length(latest_filename) 
-            #                         # print(f"The length of the audio file is {self.system_response_length} seconds.")
-            #                         self.additional_asr_start_time = False
-            #                         self.response_cnt = self.response_cnt + 1
-            #                         silent_start_time = datetime.now()
-            #                         user_spoken = False
-            #                         user_speak_start_time = False
-
-            #                 except FileNotFoundError:
-            #                     pass
-            #             else:
-            #                 self.additional_asr_start_time = datetime.now()
-            #                 sys.stdout.write('\nadditional start' + '\n')
-            #                 # playsound("additional_asr_response.wav", True)
-            #                 # self.ss["is_speaking"] = True#編集中
-            #                     ###---###
-            #         else: # SPEAK判定が出てから有声が一瞬でもあれば応答しない
-            #             pass
-                
-            # ## 開発中 Unityに遅延ファイルを読ませる必要あり ###
-            # if self.additional_asr_start_time != False:
-            #     time_difference = datetime.now() - self.additional_asr_start_time
-            #     # ./tmp/ ディレクトリ内の .wav ファイルを名前順にソート
-            #     filenames = sorted(glob.glob("./tmp/*.wav"))
-
-            #     # 名前順で最新のファイル名を取得
-            #     latest_filename = filenames[-1] if filenames else ""
-            #     sys.stdout.write('\n最新の音声ファイル名' + latest_filename +  '\n')
-            #     sys.stdout.write('\n前回の音声ファイル名' + self.prev_response_filename +  '\n')
-            #     sys.stdout.flush()
-
-
-            #     # 最新のファイル名が self.prev_response_filename と異なる場合に限り、そのファイル名を出力
-            #     if latest_filename != self.prev_response_filename:
-            #         self.prev_response_filename = latest_filename
-
-            #         if time_difference >= timedelta(seconds=2): # ５文字以上の音声認識ができるように
-            #             try:
-            #                 with open(latest_filename, 'r'):
-            #                     sys.stdout.write('\nファイルはあった' + '\n')
-            #                     sys.stdout.flush()
-            #                     # client.sendto(latest_filename.encode('utf-8'),(HOST,PORT))
-            #                     self.system_response_length = self.get_audio_length(latest_filename) 
-            #                     # print(f"The length of the audio file is {self.system_response_length} seconds.")
-            #                     self.additional_asr_start_time = False
-            #                     self.response_cnt = self.response_cnt + 1
-            #                     # print(f"The length of the audio file is {self.system_response_length} seconds。")
-            #                     silent_start_time = datetime.now()
-            #                     user_spoken = False
-            #                     user_speak_start_time = False
-            #                     prev = self.asr["you"] # システムが応答・相槌を返答する
-            #                     carry = ""
-            #                     self.prev_response_time = datetime.now()
-            #             except FileNotFoundError: # 結局５文字以上の音声認識ができなければ
-            #                 pass                                
-            #     else:
-            #         self.additional_asr_start_time = False
-            #         sys.stdout.write('\n結局対話生成できなかった' + '\n')
-            #         sys.stdout.write('\n遅延後' + latest_filename + '\n')
-            #         sys.stdout.flush()
-            #         # playsound("asr_failed.wav", True)# google speech apiの発話終了判定検証のため無効化
-            #         self.response_cnt = self.response_cnt + 1
-            #         # print(f"The length of the audio file is {self.system_response_length} seconds。")
-            #         silent_start_time = datetime.now()
-            #         user_spoken = False
-            #         prev = self.asr["you"] # システムが応答・相槌を返答する
-            #         carry = ""
-            #         self.prev_response_time = datetime.now()
-                
-            #                 # 結局２文字以下のときはすみません。ききとれませんでした。       
-
-            # time.sleep(0.01)
-            # # ASR結果が変化したら標準出力
-            # if self.response_update is True:
-                
-            #     prev_asr_you = self.asr["you"]
 
     # 応答・相槌が切り替わらなくとも対話管理をさせる            
     def pubDM(self):
         if self.response_update is True:
             self.response_update = False
-            # 最新・3つ前・6つ前の履歴をリストで返す
-            idx = len(self.asr_history)
+            # 最新から25個ずつ遡る（例: -1, -26, -51, ...）
             words = []
-            if idx > 0:
-                words.append(self.asr_history[-1])
-            if idx > 3:
-                words.append(self.asr_history[-4])
-            if idx > 6:
-                words.append(self.asr_history[-7])
-            # 空文字で埋める
-            while len(words) < 3:
-                words.append("")
+            n = len(self.asr_history)
+            if n > 0:
+                idx = n - 1
+                while idx >= 0:
+                    words.append(self.asr_history[idx])
+                    idx -= 25
+                words.reverse()  # 古いもの→新しいもの
+            sys.stdout.write(f"[pubDM] 送信する音声認識履歴リスト: {words}\n")
+            sys.stdout.flush()
             return { "words": words, "update": True}
         else:
-            # 履歴がなくても空リストで返す
-            return { "words": ["", "", ""], "update": False}
+            return { "words": [], "update": False}
 
     def updateASR(self, asr):
         # ここでASR結果の履歴を管理
-        # self.prev_asr_you = self.asr["you"]
         self.asr["you"] = asr["you"]
         self.asr["is_final"] = asr["is_final"]
-        # 追加: asr_historyへの追加はrun()内で行う
+        self.asr_history.append(self.asr["you"])  # 追加: 新たな音声認識結果を受信するたびに履歴に追加
 
     def updateSA(self, sa):
         self.sa["prevgrad"] = sa["prevgrad"]
@@ -678,6 +495,3 @@ class DialogManagement:
         self.latest_bc_time = datetime.now()
         # 受信時刻と推論値を全桁出力
         now = self.latest_bc_time
-        # now_str = now.strftime("%H:%M:%S.%f")[:-3]
-        # sys.stdout.write(f"[responseControl.py] RecvBC {now_str} result={data.get('result')} confidence={data.get('confidence'):.10f}\n")
-        # sys.stdout.flush()

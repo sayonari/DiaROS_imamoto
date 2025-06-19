@@ -23,10 +23,12 @@ class RosAutomaticSpeechRecognition(Node):
         self.automaticSpeechRecognition.update_audio(audio_np)
 
     def callback(self):
-        asr = Iasr()
-        asr.you = self.automaticSpeechRecognition.pubASR()['you']
-        asr.is_final = self.automaticSpeechRecognition.pubASR()['is_final']
-        self.pub_asr.publish(asr)
+        asr_result = self.automaticSpeechRecognition.pubASR()
+        if asr_result is not None:
+            asr = Iasr()
+            asr.you = asr_result['you']
+            asr.is_final = asr_result['is_final']
+            self.pub_asr.publish(asr)
         mm = Imm()
         mm.mod = "asr"
 

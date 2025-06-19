@@ -238,6 +238,7 @@ class AutomaticSpeechRecognition:
         self.model = None
         self.processor = None
         self.tokenizer = None
+        self.new_result = False  # 追加: 新しい認識結果フラグ
         self.model_thread = threading.Thread(target=self.recognition_thread)
         self.model_thread.daemon = True
         self.model_thread.start()
@@ -249,7 +250,11 @@ class AutomaticSpeechRecognition:
         self.recv_count += 1
 
     def pubASR(self):
-        return {"you": self.word, "is_final": self.is_final}
+        if self.new_result:
+            self.new_result = False
+            return {"you": self.word, "is_final": self.is_final}
+        else:
+            return None
 
     def run(self):
         while self.running:
@@ -309,15 +314,8 @@ class AutomaticSpeechRecognition:
                     #     sys.stdout.write("\r" + output + " " * 20 + "\r")
                     #     sys.stdout.flush()
                     self.word = sentence
-                    # self.is_final = True if sentence.strip() != "" else False
-                    # 例: self.is_final = True if sentence.strip() != "" else False
-                    # 普通の書き方（if文を使う場合）は以下のようになります
                     self.is_final = True
-
-                    # if sentence.strip() != "":
-                    #     self.is_final = True
-                    # else:
-                    #     self.is_final = False
+                    self.new_result = True  # 追加: 新しい認識結果が得られた
                     last_sent = sentence
                 # time.sleep(0.01)  # ループが高速すぎる場合のCPU負荷軽減
         except Exception as e:

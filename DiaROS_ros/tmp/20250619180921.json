@@ -1,0 +1,36 @@
+{
+    "data": [
+        {
+            "vowel_type": "e",
+            "length": 0.19636039435863495
+        },
+        {
+            "vowel_type": "cl",
+            "length": 0.1912982016801834
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.2873581126332283
+        },
+        {
+            "vowel_type": "silent_vowel",
+            "length": 0.2894821763038635
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.11552312225103378
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.15273168683052063
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.1585085391998291
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.25406041741371155
+        }
+    ]
+}

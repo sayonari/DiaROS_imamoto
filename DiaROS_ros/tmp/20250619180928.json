@@ -1,0 +1,56 @@
+{
+    "data": [
+        {
+            "vowel_type": "u",
+            "length": 0.19400279223918915
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.21274307370185852
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.16574203968048096
+        },
+        {
+            "vowel_type": "silent_vowel",
+            "length": 0.5739180445671082
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.1470436453819275
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.10613775253295898
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.09799064695835114
+        },
+        {
+            "vowel_type": "cl",
+            "length": 0.08045156300067902
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.11600062996149063
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.06367353349924088
+        },
+        {
+            "vowel_type": "cl",
+            "length": 0.09538742154836655
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.16071313247084618
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.2273695431649685
+        }
+    ]
+}

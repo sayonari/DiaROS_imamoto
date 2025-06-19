@@ -1,0 +1,248 @@
+{
+    "data": [
+        {
+            "vowel_type": "a",
+            "length": 0.1673574335873127
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.09133751690387726
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.13293780386447906
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.13066846877336502
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.13063009083271027
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.18535831570625305
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.08186015486717224
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.12424945831298828
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.0786971002817154
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.1687302514910698
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.0711023285984993
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.231194406747818
+        },
+        {
+            "vowel_type": "silent_vowel",
+            "length": 0.364704966545105
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.16750306636095047
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.06914142519235611
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.1930912658572197
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.08793283998966217
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.15064287930727005
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.07826229929924011
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.1862364113330841
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.07658001035451889
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.09054974466562271
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.11748988181352615
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.15936028212308884
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.08265045285224915
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.12060704082250595
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.1485217958688736
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.07499495148658752
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.14000215381383896
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.07159885764122009
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.12948423624038696
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.13107091188430786
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.18337975442409515
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.0855853259563446
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.12063728272914886
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.0797264575958252
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.16798371076583862
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.07703191787004471
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.11844287067651749
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.089449942111969
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.2354133240878582
+        },
+        {
+            "vowel_type": "silent_vowel",
+            "length": 0.43549609184265137
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.26780977845191956
+        },
+        {
+            "vowel_type": "N",
+            "length": 0.272705078125
+        },
+        {
+            "vowel_type": "silent_vowel",
+            "length": 0.8410499691963196
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.1956934630870819
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.13797527551651
+        },
+        {
+            "vowel_type": "e",
+            "length": 0.27676593512296677
+        },
+        {
+            "vowel_type": "silent_vowel",
+            "length": 0.326322078704834
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.12505847215652466
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.1430283635854721
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.16929760575294495
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.07768359035253525
+        },
+        {
+            "vowel_type": "I",
+            "length": 0.11175432428717613
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.16058174520730972
+        },
+        {
+            "vowel_type": "i",
+            "length": 0.06057420372962952
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.1142011359333992
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.13394193723797798
+        },
+        {
+            "vowel_type": "o",
+            "length": 0.15212640911340714
+        },
+        {
+            "vowel_type": "a",
+            "length": 0.1196693554520607
+        },
+        {
+            "vowel_type": "u",
+            "length": 0.20749858021736145
+        }
+    ]
+}
