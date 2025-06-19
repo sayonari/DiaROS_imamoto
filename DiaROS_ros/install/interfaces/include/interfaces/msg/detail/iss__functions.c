@@ -13,6 +13,7 @@
 
 // Include directives for member types
 // Member `timestamp`
+// Member `filename`
 #include "rosidl_runtime_c/string_functions.h"
 
 bool
@@ -24,6 +25,11 @@ interfaces__msg__Iss__init(interfaces__msg__Iss * msg)
   // is_speaking
   // timestamp
   if (!rosidl_runtime_c__String__init(&msg->timestamp)) {
+    interfaces__msg__Iss__fini(msg);
+    return false;
+  }
+  // filename
+  if (!rosidl_runtime_c__String__init(&msg->filename)) {
     interfaces__msg__Iss__fini(msg);
     return false;
   }
@@ -39,6 +45,8 @@ interfaces__msg__Iss__fini(interfaces__msg__Iss * msg)
   // is_speaking
   // timestamp
   rosidl_runtime_c__String__fini(&msg->timestamp);
+  // filename
+  rosidl_runtime_c__String__fini(&msg->filename);
 }
 
 bool
@@ -54,6 +62,12 @@ interfaces__msg__Iss__are_equal(const interfaces__msg__Iss * lhs, const interfac
   // timestamp
   if (!rosidl_runtime_c__String__are_equal(
       &(lhs->timestamp), &(rhs->timestamp)))
+  {
+    return false;
+  }
+  // filename
+  if (!rosidl_runtime_c__String__are_equal(
+      &(lhs->filename), &(rhs->filename)))
   {
     return false;
   }
@@ -73,6 +87,12 @@ interfaces__msg__Iss__copy(
   // timestamp
   if (!rosidl_runtime_c__String__copy(
       &(input->timestamp), &(output->timestamp)))
+  {
+    return false;
+  }
+  // filename
+  if (!rosidl_runtime_c__String__copy(
+      &(input->filename), &(output->filename)))
   {
     return false;
   }

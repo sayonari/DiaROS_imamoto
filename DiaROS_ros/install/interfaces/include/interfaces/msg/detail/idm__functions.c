@@ -12,7 +12,7 @@
 
 
 // Include directives for member types
-// Member `word`
+// Member `words`
 #include "rosidl_runtime_c/string_functions.h"
 
 bool
@@ -21,8 +21,8 @@ interfaces__msg__Idm__init(interfaces__msg__Idm * msg)
   if (!msg) {
     return false;
   }
-  // word
-  if (!rosidl_runtime_c__String__init(&msg->word)) {
+  // words
+  if (!rosidl_runtime_c__String__Sequence__init(&msg->words, 0)) {
     interfaces__msg__Idm__fini(msg);
     return false;
   }
@@ -35,8 +35,8 @@ interfaces__msg__Idm__fini(interfaces__msg__Idm * msg)
   if (!msg) {
     return;
   }
-  // word
-  rosidl_runtime_c__String__fini(&msg->word);
+  // words
+  rosidl_runtime_c__String__Sequence__fini(&msg->words);
 }
 
 bool
@@ -45,9 +45,9 @@ interfaces__msg__Idm__are_equal(const interfaces__msg__Idm * lhs, const interfac
   if (!lhs || !rhs) {
     return false;
   }
-  // word
-  if (!rosidl_runtime_c__String__are_equal(
-      &(lhs->word), &(rhs->word)))
+  // words
+  if (!rosidl_runtime_c__String__Sequence__are_equal(
+      &(lhs->words), &(rhs->words)))
   {
     return false;
   }
@@ -62,9 +62,9 @@ interfaces__msg__Idm__copy(
   if (!input || !output) {
     return false;
   }
-  // word
-  if (!rosidl_runtime_c__String__copy(
-      &(input->word), &(output->word)))
+  // words
+  if (!rosidl_runtime_c__String__Sequence__copy(
+      &(input->words), &(output->words)))
   {
     return false;
   }

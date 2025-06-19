@@ -26,23 +26,9 @@ class RosAutomaticSpeechRecognition(Node):
         asr = Iasr()
         asr.you = self.automaticSpeechRecognition.pubASR()['you']
         asr.is_final = self.automaticSpeechRecognition.pubASR()['is_final']
-        # print(asr.you, asr.is_final)
         self.pub_asr.publish(asr)
-        # self.pub_asr_dr.publish(asr)
-
-        # sa = Isa()
-        # sa.prevgrad = self.automaticSpeechRecognition.pubSA()['prevgrad']
-        # sa.frequency = self.automaticSpeechRecognition.pubSA()['frequency']
-        # sa.grad = self.automaticSpeechRecognition.pubSA()['grad']
-        # sa.power = self.automaticSpeechRecognition.pubSA()['power']
-        # sa.zerocross = self.automaticSpeechRecognition.pubSA()['zerocross']
-        # # print(sa.prevgrad, sa.frequency, sa.grad, sa.power, sa.zerocross)
-        # self.pub_sa.publish(sa)
-        # self.pub_sa_dr.publish(sa)
-
         mm = Imm()
         mm.mod = "asr"
-        # self.pub_mm.publish(mm)
 
 def runROS(pub):
     rclpy.spin(pub)

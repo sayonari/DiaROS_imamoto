@@ -6,7 +6,7 @@
 module interfaces {
   module msg {
     struct Idm {
-      string word;
+      sequence<string> words;
     };
   };
 };

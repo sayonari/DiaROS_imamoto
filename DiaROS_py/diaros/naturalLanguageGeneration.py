@@ -17,19 +17,18 @@ class NaturalLanguageGeneration:
         self.dialogue_history = []
         self.user_speak_is_final = False
         self.last_reply = ""  # 生成した対話文をここに格納
+        self.words = ["", "", ""]  # 追加: 履歴リスト
 
         sys.stdout.write('NaturalLanguageGeneration  start up.\n')
         sys.stdout.write('=====================================================\n')
         # OpenAI APIキーを環境変数から設定
         openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-    def update(self, query):
-        self.query = query
+    def update(self, words):
+        # wordsはリスト型
+        self.words = words
+        self.query = words[0] if words else ""
         self.update_flag = True
-        sys.stdout.write(f"[NLG] update() called with query: {query}\n")
-        sys.stdout.flush()
-
-
     # def generate_dialogue(self, query):
     #     sys.stdout.write('対話履歴作成\n')
     #     sys.stdout.flush()
@@ -50,56 +49,43 @@ class NaturalLanguageGeneration:
         DEBUG = True
         response_cnt = 0
         while True:
-            if self.update_flag and self.query:
-                query = self.query  # 修正: self.queryを使う
-                try:
-                    if query == "dummy":
-                        res = "はい"
-                    else:
-                        if query in ("user_speak_is_final"):
-                            sys.stdout.write('対話履歴作成\n')
-                            sys.stdout.flush()
-                            self.user_speak_is_final = True
-                            query = query.replace("user_speak_is_final", "", 1)
-                        if ":" in query:
-                            response_cnt = int(query.split(":", 1)[0])
-                            query = query.split(":", 1)[1]
-                        sys.stdout.write(f"[NLG] query: {query}\n")
-
-                        text_input = query
-                        sys.stdout.write(f"[NLG] input {text_input}\n")
-                        sys.stdout.flush()
-                        start_time = datetime.now()
-                        role = "優しい性格のアンドロイドとして、相手を労るような返答を２０文字以内でしてください。"
-                        # openai>=1.0.0対応
-                        chat_response = openai.chat.completions.create(
-                            model="gpt-3.5-turbo-0125",
-                            messages=[
-                                {"role": "system","content": role},
-                                {"role": "user","content": text_input},
-                            ],
-                        )
-                        res = chat_response.choices[0].message.content
-                        sys.stdout.write("[NLG生成文] " + res + "\n")
-                        sys.stdout.flush()
-                        if ":" in res:
-                            res = res.split(":", 1)[1]
-                        if self.user_speak_is_final:
-                            self.dialogue_history.append("usr:" + query)
-                            self.dialogue_history.append("sys:" + res)
-                            self.user_speak_is_final = False
-                            if len(self.dialogue_history) > 5:
-                                self.dialogue_history = self.dialogue_history[-4:]
-                            sys.stdout.write('対話履歴完了\n')
-                            sys.stdout.flush()
-                    self.last_reply = res  # ここに生成文を格納
-                    # 生成文を標準出力
-                    print(f"[NLG生成文] {res}")
+            if self.update_flag and self.words:
+                # 最新・3つ前・6つ前の履歴を使う
+                query_list = self.words
+                query = query_list[0] if len(query_list) > 0 else ""
+                # 必要に応じて3つ前・6つ前も利用可能
+                # sys.stdout.write(f"input:{text_input}\n")
+                # sys.stdout.flush()
+                start_time = datetime.now()
+                role = "優しい性格のアンドロイドとして、相手を労るような返答を２０文字以内でしてください。"
+                # openai>=1.0.0対応
+                chat_response = openai.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system","content": role},
+                        {"role": "user","content": query},
+                    ],
+                )
+                res = chat_response.choices[0].message.content
+                sys.stdout.write("res: " + res + "\n")
+                sys.stdout.flush()
+                elapsed_time = datetime.now() - start_time
+                sys.stdout.write(f"time: {elapsed_time.total_seconds()}秒\n")
+                sys.stdout.flush()
+                if ":" in res:
+                    res = res.split(":", 1)[1]
+                if self.user_speak_is_final:
+                    self.dialogue_history.append("usr:" + query)
+                    self.dialogue_history.append("sys:" + res)
+                    self.user_speak_is_final = False
+                    if len(self.dialogue_history) > 5:
+                        self.dialogue_history = self.dialogue_history[-4:]
+                    sys.stdout.write('対話履歴完了\n')
                     sys.stdout.flush()
-                except Exception as e:
-                    self.last_reply = ""  # エラー時はlast_replyを空にすることで音声合成に反映しない
-                    sys.stdout.write(f"[NLG ERROR] {e}\n")
-                    sys.stdout.flush()
+                self.last_reply = res  # ここに生成文を格納
+                # 生成文を標準出力
+                print(f"[NLG生成文] {res}")
+                sys.stdout.flush()
                 self.update_flag = False
             # last_replyが空でない場合のみros2_natural_language_generation.pyで送信される
             time.sleep(0.01)

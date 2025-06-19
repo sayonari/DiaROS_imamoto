@@ -14,6 +14,7 @@
 
 // Include directives for member types
 // Member `timestamp`
+// Member `filename`
 #include "rosidl_runtime_c/string_functions.h"
 
 #ifdef __cplusplus
@@ -35,7 +36,7 @@ void Iss__rosidl_typesupport_introspection_c__Iss_fini_function(void * message_m
   interfaces__msg__Iss__fini(message_memory);
 }
 
-static rosidl_typesupport_introspection_c__MessageMember Iss__rosidl_typesupport_introspection_c__Iss_message_member_array[2] = {
+static rosidl_typesupport_introspection_c__MessageMember Iss__rosidl_typesupport_introspection_c__Iss_message_member_array[3] = {
   {
     "is_speaking",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_BOOLEAN,  // type
@@ -65,13 +66,28 @@ static rosidl_typesupport_introspection_c__MessageMember Iss__rosidl_typesupport
     NULL,  // get_const(index) function pointer
     NULL,  // get(index) function pointer
     NULL  // resize(index) function pointer
+  },
+  {
+    "filename",  // name
+    rosidl_typesupport_introspection_c__ROS_TYPE_STRING,  // type
+    0,  // upper bound of string
+    NULL,  // members of sub message
+    false,  // is array
+    0,  // array size
+    false,  // is upper bound
+    offsetof(interfaces__msg__Iss, filename),  // bytes offset in struct
+    NULL,  // default value
+    NULL,  // size() function pointer
+    NULL,  // get_const(index) function pointer
+    NULL,  // get(index) function pointer
+    NULL  // resize(index) function pointer
   }
 };
 
 static const rosidl_typesupport_introspection_c__MessageMembers Iss__rosidl_typesupport_introspection_c__Iss_message_members = {
   "interfaces__msg",  // message namespace
   "Iss",  // message name
-  2,  // number of fields
+  3,  // number of fields
   sizeof(interfaces__msg__Iss),
   Iss__rosidl_typesupport_introspection_c__Iss_message_member_array,  // message members
   Iss__rosidl_typesupport_introspection_c__Iss_init_function,  // function to initialize message memory (memory has to be allocated)

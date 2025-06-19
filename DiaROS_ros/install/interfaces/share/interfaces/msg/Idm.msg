@@ -1,1 +1,1 @@
-string word
+string[] words

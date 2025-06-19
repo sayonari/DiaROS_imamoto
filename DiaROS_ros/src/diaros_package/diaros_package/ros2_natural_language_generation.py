@@ -18,9 +18,9 @@ class RosNaturalLanguageGeneration(Node):
         self.last_sent_reply = None
 
     def dm_update(self, msg):
-        query = msg.word
-        if query:
-            self.naturalLanguageGeneration.update(query)
+        words = list(msg.words)
+        if words:
+            self.naturalLanguageGeneration.update(words)
 
     def ping(self):
         # 応答が生成されたらpublish

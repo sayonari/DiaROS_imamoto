@@ -18,13 +18,13 @@ extern "C"
 // Constants defined in the message
 
 // Include directives for member types
-// Member 'word'
+// Member 'words'
 #include "rosidl_runtime_c/string.h"
 
 // Struct defined in msg/Idm in the package interfaces.
 typedef struct interfaces__msg__Idm
 {
-  rosidl_runtime_c__String word;
+  rosidl_runtime_c__String__Sequence words;
 } interfaces__msg__Idm;
 
 // Struct for a sequence of interfaces__msg__Idm.

@@ -309,7 +309,15 @@ class AutomaticSpeechRecognition:
                     #     sys.stdout.write("\r" + output + " " * 20 + "\r")
                     #     sys.stdout.flush()
                     self.word = sentence
-                    self.is_final = True if sentence.strip() != "" else False
+                    # self.is_final = True if sentence.strip() != "" else False
+                    # 例: self.is_final = True if sentence.strip() != "" else False
+                    # 普通の書き方（if文を使う場合）は以下のようになります
+                    self.is_final = True
+
+                    # if sentence.strip() != "":
+                    #     self.is_final = True
+                    # else:
+                    #     self.is_final = False
                     last_sent = sentence
                 # time.sleep(0.01)  # ループが高速すぎる場合のCPU負荷軽減
         except Exception as e:

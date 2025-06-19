@@ -15,6 +15,7 @@ import queue
 import threading
 import librosa
 import glob
+import difflib
 
 ### power制御用 ###
 import statistics
@@ -46,6 +47,7 @@ class DialogManagement:
     def __init__(self):
         self.word = ""
         self.asr = { "you": "", "is_final": False }
+        self.asr_history = []  # 追加: 音声認識履歴
         self.user_speak_is_final = False
         self.recognition_result_is_confirmed = False
         self.sa = { "prevgrad" : 0.0,
@@ -98,6 +100,9 @@ class DialogManagement:
         self.latest_tt_time = None
         self.latest_bc_data = None
         self.latest_bc_time = None
+        self.latest_synth_filename = None # 追加: 音声合成ファイル名を保存する変数
+
+        self.prev_asr_you = ""  # 直前のASR結果をインスタンス変数に
 
     def run(self):
         prev = ""
@@ -147,8 +152,28 @@ class DialogManagement:
         YELLOW = "\033[33m"
         RESET = "\033[0m"
 
-        prev_asr_you = ""  # 直前のASR結果を保存
         while True:
+            # ここでNLG用にASR結果をwordにセット
+            if self.asr["you"]:
+                # 文字単位で差分を計算
+                diff = list(difflib.ndiff(self.prev_asr_you, self.asr["you"]))
+                changed_chars = sum(1 for d in diff if d.startswith('+ ') or d.startswith('- '))
+                # 直前のASR結果と異なる場合のみ判定
+                if changed_chars >= 5 and self.asr["you"] != self.prev_asr_you:
+                    self.word = self.asr["you"]
+                    self.response_update = True
+                    self.prev_asr_you = self.asr["you"]
+                    # 追加: 履歴に追加
+                    self.asr_history.append(self.asr["you"])
+                    if len(self.asr_history) > 20:
+                        self.asr_history = self.asr_history[-20:]
+                    sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
+                    sys.stdout.flush()
+                else:
+                    self.response_update = False
+            else:
+                self.response_update = False
+
             # TTデータの判定・再生
             if self.latest_tt_data is not None and self.latest_tt_time != last_handled_tt_time:
                 tt_data = self.latest_tt_data
@@ -166,34 +191,28 @@ class DialogManagement:
                     last_handled_tt_time = tt_time
                     continue
                 if probability >= turn_taking_threshold:
-                    if self.static_response_files:
-                        wav_path = self.static_response_files[self.static_response_index]
+                    # ここで音声合成ファイル名があればそれを再生
+                    if hasattr(self, 'latest_synth_filename') and self.latest_synth_filename:
+                        wav_path = self.latest_synth_filename
                         try:
                             audio = AudioSegment.from_wav(wav_path)
                             duration_sec = len(audio) / 1000.0
                         except Exception:
                             duration_sec = 2.0
-                        sys.stdout.write(f"[TT] 再生音声長 duration_sec={duration_sec}\n")
+                        sys.stdout.write(f"[TT] 合成音声再生 duration_sec={duration_sec}\n")
                         sys.stdout.flush()
                         playsound(wav_path, True)
-                        self.static_response_index += 1
-                        if self.static_response_index >= len(self.static_response_files):
-                            self.static_response_index = 0
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
-                        # 応答終了後に相槌クールダウンを設ける
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
+                        # 再生後はファイル名をリセット
+                        self.latest_synth_filename = ""
                     else:
-                        sys.stdout.write("[ERROR] static_response_archiveに音声ファイルがありません\n")
-                    # ここでNLG用にASR結果をwordにセット
-                    if self.asr["you"]:
-                        self.word = self.asr["you"]
-                        self.response_update = True
+                        sys.stdout.write("[ERROR] 合成音声ファイル名がありません\n")
                 else:
                     # 閾値未満の場合はresponse_updateをFalseにする
                     self.response_update = False
                 last_handled_tt_time = tt_time
-
             # 応答音声再生終了後にフラグをリセット
             if is_playing_response and last_response_end_time is not None and time.time() >= last_response_end_time:
                 is_playing_response = False
@@ -208,7 +227,22 @@ class DialogManagement:
                     now = time.time()
                     if not (is_playing_response and last_response_end_time is not None and now < last_response_end_time):
                         if probability >= turn_taking_threshold:
-                            if self.static_response_files:
+                            # --- ここから修正 ---
+                            if hasattr(self, 'latest_synth_filename') and self.latest_synth_filename:
+                                wav_path = self.latest_synth_filename
+                                try:
+                                    audio = AudioSegment.from_wav(wav_path)
+                                    duration_sec = len(audio) / 1000.0
+                                except Exception:
+                                    duration_sec = 2.0
+                                sys.stdout.write(f"[TT] 合成音声再生(pending) duration_sec={duration_sec}\n")
+                                sys.stdout.flush()
+                                playsound(wav_path, True)
+                                self.latest_synth_filename = ""
+                                last_response_end_time = time.time() + duration_sec
+                                is_playing_response = True
+                                next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
+                            elif self.static_response_files:
                                 wav_path = self.static_response_files[self.static_response_index]
                                 try:
                                     audio = AudioSegment.from_wav(wav_path)
@@ -226,6 +260,7 @@ class DialogManagement:
                                 next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
                             else:
                                 sys.stdout.write("[ERROR] static_response_archiveに音声ファイルがありません\n")
+                            # --- ここまで修正 ---
                     pending_tt_data = None
                     pending_tt_time = None
 
@@ -591,15 +626,29 @@ class DialogManagement:
     def pubDM(self):
         if self.response_update is True:
             self.response_update = False
-            # print(f"[ASR結果] {self.word}")
-            # sys.stdout.flush()
-            return { "word": self.word, "update": True}
+            # 最新・3つ前・6つ前の履歴をリストで返す
+            idx = len(self.asr_history)
+            words = []
+            if idx > 0:
+                words.append(self.asr_history[-1])
+            if idx > 3:
+                words.append(self.asr_history[-4])
+            if idx > 6:
+                words.append(self.asr_history[-7])
+            # 空文字で埋める
+            while len(words) < 3:
+                words.append("")
+            return { "words": words, "update": True}
         else:
-            return { "word": self.word, "update": False}
+            # 履歴がなくても空リストで返す
+            return { "words": ["", "", ""], "update": False}
 
     def updateASR(self, asr):
+        # ここでASR結果の履歴を管理
+        # self.prev_asr_you = self.asr["you"]
         self.asr["you"] = asr["you"]
         self.asr["is_final"] = asr["is_final"]
+        # 追加: asr_historyへの追加はrun()内で行う
 
     def updateSA(self, sa):
         self.sa["prevgrad"] = sa["prevgrad"]
@@ -609,8 +658,11 @@ class DialogManagement:
         self.sa["zerocross"] = sa["zerocross"]
 
     def updateSS(self, ss):
-        self.ss["is_speaking"] = ss["is_speaking"]# test
+        self.ss["is_speaking"] = ss["is_speaking"]  # test
         self.ss["timestamp"] = ss["timestamp"]
+        # 追加: 音声合成ファイル名を受信したらTT閾値超え時に再生用に保存
+        if "filename" in ss and ss["filename"]:
+            self.latest_synth_filename = ss["filename"]
         # print(f"[ROS2] {ss['timestamp']}")
         if self.ss["is_speaking"] is True:
             self.speaking_time = datetime.now()

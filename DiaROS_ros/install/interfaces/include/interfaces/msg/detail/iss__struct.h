@@ -19,6 +19,7 @@ extern "C"
 
 // Include directives for member types
 // Member 'timestamp'
+// Member 'filename'
 #include "rosidl_runtime_c/string.h"
 
 // Struct defined in msg/Iss in the package interfaces.
@@ -26,6 +27,7 @@ typedef struct interfaces__msg__Iss
 {
   bool is_speaking;
   rosidl_runtime_c__String timestamp;
+  rosidl_runtime_c__String filename;
 } interfaces__msg__Iss;
 
 // Struct for a sequence of interfaces__msg__Iss.

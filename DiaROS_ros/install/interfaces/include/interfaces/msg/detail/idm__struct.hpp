@@ -34,33 +34,25 @@ struct Idm_
 
   explicit Idm_(rosidl_runtime_cpp::MessageInitialization _init = rosidl_runtime_cpp::MessageInitialization::ALL)
   {
-    if (rosidl_runtime_cpp::MessageInitialization::ALL == _init ||
-      rosidl_runtime_cpp::MessageInitialization::ZERO == _init)
-    {
-      this->word = "";
-    }
+    (void)_init;
   }
 
   explicit Idm_(const ContainerAllocator & _alloc, rosidl_runtime_cpp::MessageInitialization _init = rosidl_runtime_cpp::MessageInitialization::ALL)
-  : word(_alloc)
   {
-    if (rosidl_runtime_cpp::MessageInitialization::ALL == _init ||
-      rosidl_runtime_cpp::MessageInitialization::ZERO == _init)
-    {
-      this->word = "";
-    }
+    (void)_init;
+    (void)_alloc;
   }
 
   // field types and members
-  using _word_type =
-    std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>;
-  _word_type word;
+  using _words_type =
+    std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>, typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>>::other>;
+  _words_type words;
 
   // setters for named parameter idiom
-  Type & set__word(
-    const std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other> & _arg)
+  Type & set__words(
+    const std::vector<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>, typename ContainerAllocator::template rebind<std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>>::other> & _arg)
   {
-    this->word = _arg;
+    this->words = _arg;
     return *this;
   }
 
@@ -106,7 +98,7 @@ struct Idm_
   // comparison operators
   bool operator==(const Idm_ & other) const
   {
-    if (this->word != other.word) {
+    if (this->words != other.words) {
       return false;
     }
     return true;

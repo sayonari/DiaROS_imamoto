@@ -13,7 +13,7 @@
 
 
 // Include directives for member types
-// Member `word`
+// Member `words`
 #include "rosidl_runtime_c/string_functions.h"
 
 #ifdef __cplusplus
@@ -37,14 +37,14 @@ void Idm__rosidl_typesupport_introspection_c__Idm_fini_function(void * message_m
 
 static rosidl_typesupport_introspection_c__MessageMember Idm__rosidl_typesupport_introspection_c__Idm_message_member_array[1] = {
   {
-    "word",  // name
+    "words",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_STRING,  // type
     0,  // upper bound of string
     NULL,  // members of sub message
-    false,  // is array
+    true,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(interfaces__msg__Idm, word),  // bytes offset in struct
+    offsetof(interfaces__msg__Idm, words),  // bytes offset in struct
     NULL,  // default value
     NULL,  // size() function pointer
     NULL,  // get_const(index) function pointer

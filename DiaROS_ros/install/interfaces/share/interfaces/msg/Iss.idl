@@ -9,6 +9,10 @@ module interfaces {
       boolean is_speaking;
 
       string timestamp;
+
+      @verbatim (language="comment", text=
+        " 追加: 合成音声ファイル名を送信")
+      string filename;
     };
   };
 };

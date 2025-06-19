@@ -131,14 +131,12 @@ class SpeechSynthesis():
 
     def run(self, text):
         response_cnt = 0
-        # if ":" in text:
-        #     response_cnt = int(text.split(":")[0])
-        #     text = text.split(":")[1]
         print(f'TTS:{text}')
-
-        # VOICEVOXパターン
+        sys.stdout.flush()
+        tts_file = None
         try:
-            speaker = 47
+            # VOICEVOXパターン
+            speaker = 60
             # 開始時間を記録
             start_time = datetime.now()
 
@@ -252,10 +250,10 @@ class SpeechSynthesis():
             self.trim_wav(input_file, tts_file)
 
             # ここで音声ファイルを再生
-            try:
-                playsound(tts_file, True)
-            except Exception as e:
-                print(f"playsound error: {e}")
+            # try:
+            #     playsound(tts_file, True)
+            # except Exception as e:
+            #     print(f"playsound error: {e}")
 
             # 終了時間を記録
             end_time = datetime.now()
@@ -272,6 +270,7 @@ class SpeechSynthesis():
             #         self.prev_response_time = datetime.now() 
             # os.remove(tts_file)
             self.speak_end = True
+            self.last_tts_file = tts_file  # 直近の合成ファイル名を記録
 
             # Unityに口形素列を送信
             # if self.sound_available == False:
@@ -283,9 +282,12 @@ class SpeechSynthesis():
                     # client.sendto(dummy_signal.encode('utf-8'),(HOST,PORT))
                     # self.prev_response_time = datetime.now() 
 
+            return tts_file
         except Exception as e:
             print('VOICEVOXerror: VOICEVOX sound is not generated. Do you launch VOICEVOX?')
             print(e.args)
+            self.last_tts_file = ""
+            return None
 
 if __name__ == "__main__":
     tts = SpeechSynthesis()

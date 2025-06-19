@@ -39,17 +39,20 @@ struct Iss_
     {
       this->is_speaking = false;
       this->timestamp = "";
+      this->filename = "";
     }
   }
 
   explicit Iss_(const ContainerAllocator & _alloc, rosidl_runtime_cpp::MessageInitialization _init = rosidl_runtime_cpp::MessageInitialization::ALL)
-  : timestamp(_alloc)
+  : timestamp(_alloc),
+    filename(_alloc)
   {
     if (rosidl_runtime_cpp::MessageInitialization::ALL == _init ||
       rosidl_runtime_cpp::MessageInitialization::ZERO == _init)
     {
       this->is_speaking = false;
       this->timestamp = "";
+      this->filename = "";
     }
   }
 
@@ -60,6 +63,9 @@ struct Iss_
   using _timestamp_type =
     std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>;
   _timestamp_type timestamp;
+  using _filename_type =
+    std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other>;
+  _filename_type filename;
 
   // setters for named parameter idiom
   Type & set__is_speaking(
@@ -72,6 +78,12 @@ struct Iss_
     const std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other> & _arg)
   {
     this->timestamp = _arg;
+    return *this;
+  }
+  Type & set__filename(
+    const std::basic_string<char, std::char_traits<char>, typename ContainerAllocator::template rebind<char>::other> & _arg)
+  {
+    this->filename = _arg;
     return *this;
   }
 
@@ -121,6 +133,9 @@ struct Iss_
       return false;
     }
     if (this->timestamp != other.timestamp) {
+      return false;
+    }
+    if (this->filename != other.filename) {
       return false;
     }
     return true;

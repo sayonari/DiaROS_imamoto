@@ -20,16 +20,32 @@ namespace msg
 namespace builder
 {
 
+class Init_Iss_filename
+{
+public:
+  explicit Init_Iss_filename(::interfaces::msg::Iss & msg)
+  : msg_(msg)
+  {}
+  ::interfaces::msg::Iss filename(::interfaces::msg::Iss::_filename_type arg)
+  {
+    msg_.filename = std::move(arg);
+    return std::move(msg_);
+  }
+
+private:
+  ::interfaces::msg::Iss msg_;
+};
+
 class Init_Iss_timestamp
 {
 public:
   explicit Init_Iss_timestamp(::interfaces::msg::Iss & msg)
   : msg_(msg)
   {}
-  ::interfaces::msg::Iss timestamp(::interfaces::msg::Iss::_timestamp_type arg)
+  Init_Iss_filename timestamp(::interfaces::msg::Iss::_timestamp_type arg)
   {
     msg_.timestamp = std::move(arg);
-    return std::move(msg_);
+    return Init_Iss_filename(msg_);
   }
 
 private:
