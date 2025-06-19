@@ -83,14 +83,16 @@ class NaturalLanguageGeneration:
                             self.last_reply = ""
                             self.update_flag = False
                             continue
-                        asr1 = self.asr_results[0] if len(self.asr_results) > 0 else ""
-                        asr2 = self.asr_results[1] if len(self.asr_results) > 1 else ""
-                        asr3 = self.asr_results[2] if len(self.asr_results) > 2 else ""
+                        # 音声認識結果をすべて列挙
+                        asr_lines = []
+                        for idx, asr in enumerate(self.asr_results):
+                            asr_lines.append(f"認識結果{idx+1}: {asr}")
+                        asr_block = "\n".join(asr_lines)
                         prompt = (
 """
 あなたは、ユーザーの不完全な音声入力を正確に理解し、その内容に対して親しみやすく応答する対話型AIです。あなたはユーザー（男性）の友達である、優しく明るい性格の女性アンドロイドとして振る舞い、雑談をしている状況を想定して応答します。
 
-まず、"human"から与えられる3つの音声認識結果（認識結果1, 認識結果2, 認識結果3）をもとに、以下のルールに従ってユーザーの本来の発話を正確に推定してください。
+まず、"human"から与えられる複数の音声認識結果（認識結果1, 認識結果2, ...）をもとに、以下のルールに従ってユーザーの本来の発話を正確に推定してください。
 
 - 各認識結果はCERが20%の音声認識器によって得られたものなので、音声認識誤りを訂正してください。
 - 認識結果に含まれる `<unk>` は、いわゆるアンノウンタスクであり、認識できなかった部分を示します。文脈からその部分を適切に補完するか、あるいは不要であれば無視するように判断してください。
@@ -111,15 +113,15 @@ class NaturalLanguageGeneration:
 """
                         )
                         # LangChainでリクエスト
-                        messages = [
-                            ("system", prompt),
-                            ("human", f"認識結果1: {asr1}"),
-                            ("human", f"認識結果2: {asr2}"),
-                            ("human", f"認識結果3: {asr3}")
-                        ]
+                        messages = [("system", prompt)]
+                        for line in asr_lines:
+                            messages.append(("human", line))
                         query = ChatPromptTemplate.from_messages(messages)
                         chain = query | ollama_model | StrOutputParser()
                         res = chain.invoke({})
+                        # 音声認識結果リストも一緒に表示
+                        sys.stdout.write(f"[NLG ASRリスト] {self.asr_results}\n")
+                        sys.stdout.flush()
                     else:
                         if not query or (isinstance(query, list) and all((not x or x.strip() == "") for x in query)):
                             self.last_reply = ""
