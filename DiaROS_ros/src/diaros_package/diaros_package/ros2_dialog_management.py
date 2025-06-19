@@ -14,6 +14,10 @@ from interfaces.msg import Itt
 from interfaces.msg import Ibc  # 追加
 from interfaces.msg import Iaa
 from diaros.dialogManagement import DialogManagement
+import sys
+import os
+sys.path.append(os.path.expanduser('~/DiaROS_deep_model/DiaROS_py/diaros'))
+from playsound import playsound
 
 class RosDialogManagement(Node):
     def __init__(self, dialogManagement):
@@ -35,24 +39,12 @@ class RosDialogManagement(Node):
     def dm_update(self, dm):
         new = { "you": dm.you, "is_final": dm.is_final }
         self.dialogManagement.updateASR(new)
-
-    def sa_update(self, sa):
-        new = {
-            "prevgrad" : sa.prevgrad,
-            "frequency": sa.frequency,
-            "grad"     : sa.grad,
-            "power"    : sa.power,
-            "zerocross": sa.zerocross   }
-        self.dialogManagement.updateSA(new)
-
-        mm = Imm()
-        mm.mod = "dm"
-        # self.pub_mm.publish(mm)
-    
+        
     def ss_update(self, ss):# test
         new = {
             "is_speaking": ss.is_speaking,
-            "timestamp": ss.timestamp
+            "timestamp": ss.timestamp,
+            "filename": ss.filename  # ← 追加: 合成音声ファイル名を渡す
         }
         # print(f"[SSトピック受信] is_speaking: {new['is_speaking']} / timestamp: {new['timestamp']}")  # 確認用
         self.dialogManagement.updateSS(new)
@@ -87,17 +79,17 @@ class RosDialogManagement(Node):
     def callback(self): #  連続して相槌を打てるようにした
         dm = Idm()
         pub_dm_return = self.dialogManagement.pubDM()
-        now_word = pub_dm_return['word']
+        words = pub_dm_return['words']
         dm_result_update = pub_dm_return['update']
 
         if dm_result_update is True:
-            dm.word = now_word 
+            dm.words = words
         else:
-            dm.word = ""
-        self.prev_word = now_word #  現状はprev_wordは使っていない
-        #print(dm.word)
+            dm.words = ["", "", ""]
+        self.prev_word = words[0] if words else "" #  現状はprev_wordは使っていない
+        #print(dm.words)
         # ここでpublish内容を標準出力
-        # print(f"[DM publish] {dm.word}")
+        # print(f"[DM publish] {dm.words}")
         # sys.stdout.flush()
         self.pub_dm.publish(dm)
 
@@ -110,6 +102,14 @@ class RosDialogManagement(Node):
             "zerocross": msg.zerocross
         }
         self.dialogManagement.updateSA(new)
+
+    # def wav_play(self, msg):
+    #     filename = msg.filename
+    #     if filename:
+    #         try:
+    #             playsound(filename, True)
+    #         except Exception as e:
+    #             print(f"[DM] playsound error: {e}")
 
     # def callback(self):# Admhive wordの内容が変更されていたら対話生成していた
     #     dm = Idm()

@@ -158,3 +158,21 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# DiaROS packages for running on another PC
+acousticAnalysis.py
+automaticSpeechRecognition.py
+backChannel.py
+dialogManagement.py
+speechInput.py
+speechSynthesis.py
+turnTaking.py
+
+# ROS packages for running on the same PC
+ros_acoustic_analysis.py
+ros_automatic_speech_recognition.py
+ros_back_channel.py
+ros_dialog_management.py
+ros_speech_input.py
+ros_speech_synthesis.py
+ros_turn_taking.py

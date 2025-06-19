@@ -20,15 +20,15 @@ namespace msg
 namespace builder
 {
 
-class Init_Idm_word
+class Init_Idm_words
 {
 public:
-  Init_Idm_word()
+  Init_Idm_words()
   : msg_(::rosidl_runtime_cpp::MessageInitialization::SKIP)
   {}
-  ::interfaces::msg::Idm word(::interfaces::msg::Idm::_word_type arg)
+  ::interfaces::msg::Idm words(::interfaces::msg::Idm::_words_type arg)
   {
-    msg_.word = std::move(arg);
+    msg_.words = std::move(arg);
     return std::move(msg_);
   }
 
@@ -47,7 +47,7 @@ template<>
 inline
 auto build<::interfaces::msg::Idm>()
 {
-  return interfaces::msg::builder::Init_Idm_word();
+  return interfaces::msg::builder::Init_Idm_words();
 }
 
 }  // namespace interfaces

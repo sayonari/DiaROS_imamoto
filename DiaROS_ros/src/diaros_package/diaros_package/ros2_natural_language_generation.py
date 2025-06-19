@@ -18,13 +18,18 @@ class RosNaturalLanguageGeneration(Node):
         self.last_sent_reply = None
 
     def dm_update(self, msg):
-        query = msg.word
-        if query:
-            self.naturalLanguageGeneration.update(query)
-
+        words = list(msg.words)
+        # すべて空文字列なら送らない
+        if words and any(w.strip() for w in words):
+            self.naturalLanguageGeneration.update(words)
+            
     def ping(self):
         # 応答が生成されたらpublish
-        if hasattr(self.naturalLanguageGeneration, "last_reply") and self.naturalLanguageGeneration.last_reply != self.last_sent_reply:
+        if (
+            hasattr(self.naturalLanguageGeneration, "last_reply")
+            and self.naturalLanguageGeneration.last_reply != self.last_sent_reply
+            and self.naturalLanguageGeneration.last_reply != ""
+        ):
             nlg_msg = Inlg()
             nlg_msg.reply = self.naturalLanguageGeneration.last_reply
             self.pub_nlg.publish(nlg_msg)  # ここでNLG生成文をNLGtoSSトピックで送信

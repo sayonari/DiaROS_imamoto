@@ -37,21 +37,48 @@ void Idm_fini_function(void * message_memory)
   typed_message->~Idm();
 }
 
+size_t size_function__Idm__words(const void * untyped_member)
+{
+  const auto * member = reinterpret_cast<const std::vector<std::string> *>(untyped_member);
+  return member->size();
+}
+
+const void * get_const_function__Idm__words(const void * untyped_member, size_t index)
+{
+  const auto & member =
+    *reinterpret_cast<const std::vector<std::string> *>(untyped_member);
+  return &member[index];
+}
+
+void * get_function__Idm__words(void * untyped_member, size_t index)
+{
+  auto & member =
+    *reinterpret_cast<std::vector<std::string> *>(untyped_member);
+  return &member[index];
+}
+
+void resize_function__Idm__words(void * untyped_member, size_t size)
+{
+  auto * member =
+    reinterpret_cast<std::vector<std::string> *>(untyped_member);
+  member->resize(size);
+}
+
 static const ::rosidl_typesupport_introspection_cpp::MessageMember Idm_message_member_array[1] = {
   {
-    "word",  // name
+    "words",  // name
     ::rosidl_typesupport_introspection_cpp::ROS_TYPE_STRING,  // type
     0,  // upper bound of string
     nullptr,  // members of sub message
-    false,  // is array
+    true,  // is array
     0,  // array size
     false,  // is upper bound
-    offsetof(interfaces::msg::Idm, word),  // bytes offset in struct
+    offsetof(interfaces::msg::Idm, words),  // bytes offset in struct
     nullptr,  // default value
-    nullptr,  // size() function pointer
-    nullptr,  // get_const(index) function pointer
-    nullptr,  // get(index) function pointer
-    nullptr  // resize(index) function pointer
+    size_function__Idm__words,  // size() function pointer
+    get_const_function__Idm__words,  // get_const(index) function pointer
+    get_function__Idm__words,  // get(index) function pointer
+    resize_function__Idm__words  // resize(index) function pointer
   }
 };
 

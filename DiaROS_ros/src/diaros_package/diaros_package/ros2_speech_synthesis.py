@@ -17,13 +17,19 @@ class RosSpeechSynthesis(Node):
         self.pub_ss = self.create_publisher(Iss, 'SStoDM', 1)
         # self.pub_ss = self.create_publisher(Iss, 'SStoDR', 1)
         # self.pub_mm = self.create_publisher(Imm, 'MM', 1)
+        # self.pub_wav = self.create_publisher(SynthWav, 'SynthWav', 1)  # ← 削除
         self.timer = self.create_timer(0.02, self.send)
         self.is_speaking = False
 
     def play(self, nlg):
-        # self.is_speaking = True
         text = str(nlg.reply)
-        self.speechSynthesis.run(text)
+        if not text.strip():
+            return  # 空文字列の場合は何もしない
+        wav_path = self.speechSynthesis.run(text)
+        # 音声合成後、ファイル名をIssでpublish
+        # wav_msg = SynthWav()
+        # wav_msg.filename = wav_path if wav_path else ""
+        # self.pub_wav.publish(wav_msg)
         # if not self.is_speaking:
         #     text = str(nlg.reply)
         #     print("speaking..."+text)
@@ -39,7 +45,11 @@ class RosSpeechSynthesis(Node):
         # 追記
         now = datetime.now()
         ss.timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        # 追記ここまで
+        # 直近の合成ファイル名を取得して送信
+        if hasattr(self.speechSynthesis, 'last_tts_file'):
+            ss.filename = self.speechSynthesis.last_tts_file if self.speechSynthesis.last_tts_file else ""
+        else:
+            ss.filename = ""
         self.pub_ss.publish(ss)
         self.speechSynthesis.speak_end = False
 
