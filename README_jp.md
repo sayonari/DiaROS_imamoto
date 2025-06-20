@@ -18,411 +18,365 @@ nishimura@is.tokushima-u.ac.jp
 
 ## 注意事項
 - まだバグが含まれています．バグ取り段階です．
-- ダッシュボード（nodejs, vueによる実装）は動きません
-  - 無しでも音声対話システムは動きます
+
+## ブランチについて
+- `main`: 標準ブランチ
+- `deep_model`: ディープラーニングベースの音声認識・合成モデルを使用する実験的ブランチ
+  - 高精度な音声認識が可能
+  - より自然な音声合成を実現
+  - GPU推奨（CPUでも動作可能）
 
 
 # システムインストール方法
 以下にシステムのインストール方法を記載します．
 
-## 0. システム環境（開発時）
-- OS: Ubuntu 20.04.3
+## 0. システム要件
+- OS: Ubuntu 22.04 LTS
+- Python: 3.10.x（Ubuntu 22.04のデフォルト）
+- ROS2: Humble Hawksbill
 
 
-## 1. ROS2 Foxy をインストールする
-https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Debians.html
+## 1. ROS2 Humble をインストールする
+https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html
 
-- 順番に実行していく
-- 問題なく終了し，テストも動くはずです．
-
-
-### （おまけ）Turtlesim でのテストもやりたい！
-https://docs.ros.org/en/foxy/Tutorials.html
-
-```shell
-$ sudo apt update
-$ sudo apt install ros-foxy-turtlesim
-```
-
-```shell
-[shell 1]
-$ ros2 run turtlesim turtlesim_node
-
-[shell 2]
-$ ros2 run turtlesim turtle_teleop_key
-```
-
-
-## 2. Python環境インストール
-### 2.1 pyenv インストール
-まっさらなUbuntu20.04環境へのpyenvインストールメモ
-https://qiita.com/sho1_24/items/96c3c9e71629de3801fb
-
-- 各種ライブラリインストール
-```shell
-$ sudo apt install git gcc make zlib1g-dev libffi-dev libbz2-dev libssl-dev libreadline-dev libsqlite3-dev python3-tk tk-dev
-```
-
-- pyenvのインストール
-```shell
-$ git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-$ git clone https://github.com/pyenv/pyenv-update.git ~/.pyenv/plugins/pyenv-update
-```
-
-- 環境変数の設定
-`PYTHONPATH`の設定は，pythonのデフォルトのモジュールインストール先と．`--user`でのモジュールインストール先を追記しておく．  
-pythonのバージョンなどに気をつける
+### 1.1 基本インストール
 ```bash
-# .bashrc
+# ロケール設定
+sudo locale-gen en_US en_US.UTF-8
+sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
 
-# for pyenv(python)
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-PPTMP=`python -c "import site; print (site.getsitepackages()[0])"`
-export PYTHONPATH="$PPTMP:$PYTHONPATH"
-PPTMP=`python -m site --user-site`
-export PYTHONPATH="$PPTMP:$PYTHONPATH"
+# ROS2リポジトリの追加
+sudo apt update && sudo apt install curl -y
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# ROS2 Humbleインストール
+sudo apt update
+sudo apt upgrade -y
+sudo apt install ros-humble-desktop -y
+sudo apt install ros-dev-tools -y
+
+# 環境設定を.bashrcに追加
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+
+### 1.2（オプション）Turtlesim でのテスト
+```bash
+# 別々のターミナルで実行
+# ターミナル1:
+ros2 run turtlesim turtlesim_node
+
+# ターミナル2:
+ros2 run turtlesim turtle_teleop_key
 ```
 
 
-OS標準pythonコマンドへのシンボリックリンク作成
-```shell
-$ sudo apt install python-is-python3
+## 2. 依存パッケージのインストール
+
+### 2.1 システムパッケージ
+```bash
+# 開発ツール
+sudo apt update
+sudo apt install -y git gcc g++ make cmake build-essential
+
+# Python関連
+sudo apt install -y python3-pip python3-dev python3-venv
+sudo apt install -y python-is-python3
+
+# オーディオ関連
+sudo apt install -y portaudio19-dev libportaudio2
+sudo apt install -y libsndfile1-dev
+
+# その他の依存関係
+sudo apt install -y libcairo2-dev libgirepository1.0-dev
+sudo apt install -y libxt-dev libssl-dev libffi-dev
+sudo apt install -y zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev
+sudo apt install -y python3-tk tk-dev
 ```
 
-### 2.2 Pythonインストール
-```
-インストール可能なバージョンの確認
-$ pyenv install -l | less
+### 2.2 Python仮想環境の作成（推奨）
+```bash
+# プロジェクトディレクトリで実行
+python3 -m venv venv
+source venv/bin/activate
 
-インストール
-$ pyenv install 3.8.13
-
-バージョン設定
-$ pyenv global 3.8.13
+# pipのアップグレード
+pip install --upgrade pip setuptools wheel
 ```
 
 
 ## 3. 音声対話システムインストール
 
-### 3.1 A3RTとGoogle APIのKey取得と配置 
-A3RT talkAPIは，雑談応答生成用のチャットボットAPIです．  
-Google APIは，音声認識用のGoogle Speech-to-Text APIです．
+### 3.1 APIキーの取得と設定
 
-- A3RT talkAPIのAPIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/
-- テキストファイルにAPIキーをコピペし保存（APIキーのみ入ったテキストファイル）
-- テキストファイルを以下に設置（HOMEディレクトリは各自読み替えてね）
-```
-/home/nishimura/secret/nishimura_A3RT_APIKEY.data
+#### A3RT Talk API（雑談応答生成）
+1. APIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/
+2. APIキーをテキストファイルに保存
+3. 環境変数に設定
+
+#### Google Speech-to-Text API（音声認識）
+1. Google Cloud Consoleでプロジェクトを作成
+2. Speech-to-Text APIを有効化
+3. サービスアカウントキーを作成（JSON形式）
+4. 詳細手順: https://cloud.google.com/speech-to-text/docs/before-you-begin?hl=ja
+
+#### 環境変数の設定
+`~/.bashrc` に以下を追加:
+```bash
+# 音声対話システム用APIキー
+export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
+export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
+
+# ROS2環境
+source /opt/ros/humble/setup.bash
 ```
 
-- Google APIキーを作成し以下に設置（キーJSONファイル作成は，以下のページに従ってください）  
-https://cloud.google.com/speech-to-text/docs/before-you-begin?hl=ja
-```
-/home/nishimura/secret/nishimura_SDS.json
-```
-
-- A3RT APIキー, Google APIキーのパスを環境変数に追加  
-`~/.bashrc` に以下を追加
-```shell
-export GOOGLE_APPLICATION_CREDENTIALS="/home/nishimura/secret/nishimura_SDS.json"
-export A3RT_APIKEY="/home/nishimura/secret/nishimura_A3RT_APIKEY.data"
-```
-
-
-### 3.2 音声対話システムモジュールインストール
-`DiaROS/DiaROS_py`内で以下を実行
+### 3.2 Pythonパッケージのインストール
 
 ```bash
-$ python -m pip install . --user
+# Google Cloud Speech API
+pip install google-cloud-speech
+
+# 音声処理関連
+pip install numpy scipy matplotlib
+pip install pyaudio sounddevice
+pip install aubio  # または: pip install git+https://github.com/aubio/aubio/
+
+# 音声合成関連
+pip install gtts playsound pydub
+
+# その他のユーティリティ
+pip install requests pyworld
+
+# ROS2関連（GUI用）
+pip install PyQt5==5.15.* PySide2 pydot
 ```
 
+### 3.3 VOICEVOX（日本語音声合成）のインストール
 
-### 3.3 音声対話システム用pythonモジュールのインストール
+VOICEVOXは高品質な日本語音声合成エンジンです．
 
-**■google cloud speech api のインストール**
-```shell:
-$ python -m pip install google gcloud google-auth google-api-core google-cloud-speech grpc-google-cloud-speech-v1beta1 grpcio grpcio-tools
-```
-
-```shell:
-$ python -m pip install -U numpy scipy requests pyworld matplotlib==2.*
-```
-
-**■pyaudio のインストール**
-
-```shell:
-$ sudo apt-get install portaudio19-dev
-$ pip install pyaudio
-```
-
-
-**■aubioのインストール**
-
-そのままpipで入らない．
-githubから最新版をダウンロードしてインストール．
-
-（pipコマンドを通じてダウンロードする！）
-
-```shell:
-$ python -m pip install git+https://github.com/aubio/aubio/
-```
-
-**■その他インストール**
-```shell:
-$ python -m pip install gtts playsound
-```
-
-### 3.4 ROSパッケージ(MSG)のビルド
-まず，colconのインストールから
+1. VOICEVOXエンジンのダウンロード
 ```bash
-$ sudo apt install python3-colcon-common-extensions
+# 最新版を確認: https://github.com/VOICEVOX/voicevox_engine/releases
+wget https://github.com/VOICEVOX/voicevox_engine/releases/download/0.14.1/voicevox_engine-linux-cpu-0.14.1.7z
+7z x voicevox_engine-linux-cpu-0.14.1.7z
 ```
 
-`/home/nishimura/program/DiaROS/DiaROS_ros` にて
+2. VOICEVOXの起動
+```bash
+cd voicevox_engine-linux-cpu-0.14.1
+./run
+# デフォルトでhttp://localhost:50021で起動
+```
+
+3. Python用クライアントのインストール
+```bash
+pip install voicevox-client
+```
+
+### 3.4 音声対話システムモジュールのインストール
+`DiaROS/DiaROS_py`ディレクトリで以下を実行:
 
 ```bash
-# ディレクトリの移動と，環境設定
-$ cd /home/nishimura/program/DiaROS/DiaROS_ros
-$ . /home/nishimura/ros2_foxy/ros2-linux/local_setup.bash
-
-# msgフォルダ（interfaces）のビルド
-$ colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
-$ . ./install/local_setup.bash
-
-# ros2モジュール(diaros_package)のビルド
-$ colcon build --packages-select diaros_package
-$ . ./install/local_setup.bash
-``` 
-
-
-
-
-
-
-## 4. （まだバグってて動きません！）ダッシュボードインストール
-注意：以下，まだバグっており実現できません．nodejs,vue のモジュール周りのバージョンがうまく合わず，開発時の環境が再現できないため，動作しません．動かせた人がいたら教えてください(´；ω；｀)
-
-### 4.1 npm インストール
-```
-$ sudo apt update
-$ sudo apt install curl
-$ curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-$ sudo apt-get install -y nodejs
-# $ sudo apt-get install gcc g++ make
+cd ~/DiaROS/DiaROS_py
+pip install -e .
 ```
 
-確認
-```
-$ node -v
-$ npm -v
-```
+### 3.5 ROSパッケージのビルド
 
-npmのバージョンを上げる
-```
-$ sudo npm install -g npm
-```
-
-### 4.2 ダッシュボードインストール
-ダッシュボード：サーバ，クライアントのインストール
 ```bash
-$ cd /home/nishimura/program/DiaROS/dialogue-dashboard
+# colconのインストール
+sudo apt install python3-colcon-common-extensions
 
-# モジュールをインストール
-$ cd 
-$ sudo npm install -g typescript
-$ sudo npm install -g require
-$ sudo npm i @types/node
-$ sudo npm audit fix --force
+# ワークスペースに移動
+cd ~/DiaROS/DiaROS_ros
 
+# インターフェース（メッセージ型）のビルド
+colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
+source ./install/local_setup.bash
 
-# サーバインストール
-$ cd server
-$ sudo npm ci
-$ sudo npm run build
-
-# クライアントインストール
-$ cd ..
-$ sudo npm ci
-$ sudo npm run build
-```
-
-指示通り以下を実行
-```shell:
-$ sudo npm audit fix --force
-```
-
-ERESOLVE could not resolve がでたら
-https://github.com/vuejs/vue-cli/issues/6270
-```
-$ npm i --legacy-peer-deps
-```
-
-Error: Rule can only have one resource source が出たら
-https://stackoverflow.com/questions/64373393/error-rule-can-only-have-one-resource-source-provided-resource-and-test-incl
-```
-$ sudo npm uninstall webpack
-$ sudo npm install webpack@^4.45.0
-```
-
-Cannot find module 'webpack/lib/RuleSet'
-https://github.com/vuejs/vue-loader/issues/1586
-```
-$ sudo npm i vue-loader
-
-$ sudo npm install --save-dev webpack webpack-cli html-webpack-plugin webpack-dev-server webpack-dev-middleware
+# DiaROSパッケージのビルド
+colcon build --packages-select diaros_package
+source ./install/local_setup.bash
 ```
 
 
+## 4. 実行手順
 
-## 5. 実行手順
-
-### 5.1 音声対話システム起動
+### 4.1 音声対話システムの起動
 ```bash
-$ cd /home/nishimura/program/DiaROS/DiaROS_ros
-$ . /home/nishimura/ros2_foxy/ros2-linux/local_setup.bash
-$ . /home/nishimura/program/DiaROS/DiaROS_ros/install/local_setup.bash
+# 新しいターミナルで
+cd ~/DiaROS/DiaROS_ros
+source /opt/ros/humble/setup.bash
+source ./install/local_setup.bash
 
-# 音声対話システム実行
-$ ros2 launch diaros_package sdsmod.launch.py
-``` 
+# VOICEVOXを使用する場合は事前に起動しておく
+# （別ターミナルで ./voicevox_engine/run を実行）
+
+# 音声対話システムの実行
+ros2 launch diaros_package sdsmod.launch.py
+```
+
+### 4.2 システムの停止
+`Ctrl+C` で終了します．
 
 
-### 5.2 （まだ動作しません）ダッシュボード起動
+## 5. ROS2モニタリングツールの活用
+
+### 5.1 rqt_graph - ノードとトピックの可視化
 ```bash
-$ cd C:\sayonari\DiaROS\dialogue-dashboard
-$ npm run start # サーバ起動
-$ npm run serve # クライアント起動
+# システム全体の通信構造を視覚的に確認
+ros2 run rqt_graph rqt_graph
 ```
 
-### 5.3 （まだ動作しません）ダッシュボード用と管理ツール用のrosモジュール起動
+### 5.2 ros2 topic - トピックの監視
 ```bash
-$ cd C:\sayonari\DiaROS\spoken-dialogue-system
-$ call C:\dev\ros2_foxy\local_setup.bat
-$ call install\local_setup.bat
-ros2 run diaros_package dr # ダッシュボード連携
-ros2 run diaros_package mm # 管理ツール用
+# 利用可能なトピック一覧
+ros2 topic list
+
+# 特定トピックの内容をリアルタイム表示
+ros2 topic echo /speech_recognition
+ros2 topic echo /dialogue_response
+ros2 topic echo /speech_synthesis
+
+# トピックの周波数確認
+ros2 topic hz /audio_input
 ```
 
-
-
-## 6. ROS2の機能活用
-### 6.0 環境構築
+### 5.3 ros2 bag - データの記録と再生
 ```bash
-$ python -m pip install PyQt5==5.12 PySide2 pydot
-$ pip3 uninstall PyQt5 # バージョンが混在して動かなくなるので，これでpip3版を消す！
-```
-https://ar-ray.hatenablog.com/entry/2021/03/10/203358
+# すべてのトピックを記録
+ros2 bag record -a
 
+# 特定のトピックのみ記録
+ros2 bag record /speech_recognition /dialogue_response
 
-### 6.1 rqt
-http://docs.ros.org/en/foxy/Concepts/About-RQt.html
+# 記録したデータの情報確認
+ros2 bag info <bag_file>
 
-RQtは，QtベースのROS向けGUIフレームワークです．ros2 foxy には，標準で以下のrqtツールが含まれています．  
-（TAB補完による候補の表示）
-```
-$ ros2 run rqt[TAB]
-rqt                 rqt_gui             rqt_plot            rqt_reconfigure     rqt_top
-rqt_action          rqt_gui_cpp         rqt_publisher       rqt_service_caller  rqt_topic
-rqt_console         rqt_gui_py          rqt_py_common       rqt_shell           
-rqt_graph           rqt_msg             rqt_py_console      rqt_srv    
+# 記録したデータの再生
+ros2 bag play <bag_file>
 ```
 
-
-### 6.2 rqt_graph
-```
-$ ros2 run rqt_graph rqt_graph
-```
-
-### 6.3 rqt_plot
-```
-$ ros2 run rqt_plot rqt_plot
+### 5.4 rqt_plot - データの可視化
+```bash
+# 音声レベルなどの数値データをグラフ表示
+ros2 run rqt_plot rqt_plot
 ```
 
-エラーが出て動かなかったら，apt-get upgrade でrosパッケージがアップグレードしましょう．
-```
-$ sudo apt-get update
-$ sudo apt-get upgrade
+### 5.5 その他の便利なコマンド
+```bash
+# ノード一覧
+ros2 node list
 
-$ python -m pip install --upgrade pydot pyqt5
+# ノード情報
+ros2 node info /speech_recognition_node
+
+# サービス一覧
+ros2 service list
+
+# パラメータ一覧
+ros2 param list
 ```
 
 
+## 6. トラブルシューティング
 
-### 6.x rqt_bag
-https://zenn.dev/techkind/articles/2106100906_ros2_rqt_bag
+### 6.1 サウンドデバイス（USBヘッドセット）が認識されない場合
+```bash
+# カーネルモジュールの更新
+sudo apt update
+sudo apt upgrade linux-generic
 
-rqt_bag コマンドにより，GUI表示によりトピックの流れを可視化することができます．
-ros2 foxy には標準では含まれていないツールなので，上記URLを参考にツールをインストールしましょう．
-
-
-
-
-## 以下，実行時のエラーに対する対処
-### 9.1 サウンドデバイス（USBヘッドセット）が認識されなかったら！
-https://kazuhira-r.hatenablog.com/entry/2020/02/28/000625
-
-```
-# バージョンチェック
-$  sudo apt search ^linux-headers-
-
-# 5.13.0-41が新しそうだったので，それを入れる！
-$ sudo apt install linux-image-5.13.0-41-generic linux-headers-5.13.0-41-generic linux-modules-extra-5.13.0-41-generic
+# 再起動後、デバイスを確認
+pactl list short sources
+pactl list short sinks
 ```
 
+### 6.2 デフォルトサウンドデバイスの固定
+```bash
+# 入力デバイス一覧確認
+pactl list short sources
 
-### 9.2 voice.py でwindows用音声合成を使わない！
-python でgttsを読み込んでみたときに`■No module named gi`と言われる．
-```
-$ python
->>> import gtts
-(error) No module named gi
-```
+# デフォルトデバイスの設定
+pactl set-default-source <device_name>
 
-そのときには，以下を実行．  
-https://stackoverflow.com/questions/71369726/no-module-named-gi
-```
-$ sudo apt install libcairo2-dev
-$ sudo apt install libxt-dev
-$ sudo apt install libgirepository1.0-dev
-$ pip install pycairo
-$ pip install PyGObject
+# ~/.bashrcに追加して永続化
+echo "pactl set-default-source <device_name>" >> ~/.bashrc
 ```
 
-
-### 9.3 default のサウンドデバイスを固定
-https://wolfgang-ziegler.com/blog/prevent-changing-of-default-ubuntu-sound-device
-
-- インプットデバイスリスト確認
-```
-$ pactl list short sources
-```
-
-- デフォルトに設定
-```
-$ pactl set-default-source alsa_input.usb-Sennheiser_Communications_Sennheiser_USB_headset-00.mono-fallback
+### 6.3 ALSA関連のエラーメッセージを抑制
+Unknown PCM cardsなどのエラーが表示される場合：
+```bash
+# /usr/share/alsa/alsa.conf の不要な設定をコメントアウト
+sudo nano /usr/share/alsa/alsa.conf
+# cards.pcm.rear, cards.pcm.center_lfe などの行をコメントアウト
 ```
 
-- '~/.bashrc'に上記設定を追記
-
-
-### 9.4 毎回 Unknown PCM cards が表示される
-https://stackoverflow.com/questions/31603555/unknown-pcm-cards-pcm-rear-pyaudio
-```
-ALSA lib pcm_dsnoop.c:641:(snd_pcm_dsnoop_open) unable to open slave
-ALSA lib pcm_dmix.c:1089:(snd_pcm_dmix_open) unable to open slave
-ALSA lib pcm.c:2642:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.rear
-ALSA lib pcm.c:2642:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.center_lfe
-ALSA lib pcm.c:2642:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.side
-ALSA lib pcm_oss.c:377:(_snd_pcm_oss_open) Unknown field port
-ALSA lib pcm_oss.c:377:(_snd_pcm_oss_open) Unknown field port
-ALSA lib pcm_usb_stream.c:486:(_snd_pcm_usb_stream_open) Invalid type for card
-ALSA lib pcm_usb_stream.c:486:(_snd_pcm_usb_stream_open) Invalid type for card
-ALSA lib pcm_dmix.c:1089:(snd_pcm_dmix_open) unable to open slave
+### 6.4 Python GTTSでのエラー対処
+```bash
+# No module named 'gi' エラーの場合
+sudo apt install libcairo2-dev libgirepository1.0-dev
+pip install pycairo PyGObject
 ```
 
-Unknown PCM cards are removed by commenting out relevant lines in `/usr/share/alsa/alsa.conf`.  
-（使ってない，知らんカード用の設定はコメントアウトしろ）
+### 6.5 ROS2関連のトラブル
+```bash
+# 環境変数の確認
+printenv | grep ROS
+
+# ワークスペースのクリーンビルド
+cd ~/DiaROS/DiaROS_ros
+rm -rf build/ install/ log/
+colcon build
+```
 
 
+## 7. 開発者向け情報
+
+### 7.1 プロジェクト構造
+```
+DiaROS/
+├── DiaROS_py/          # Python音声対話システムモジュール
+├── DiaROS_ros/         # ROS2パッケージ
+│   ├── interfaces/     # メッセージ型定義
+│   └── diaros_package/ # メインパッケージ
+└── docs/               # ドキュメント
+```
+
+### 7.2 主要なROSトピック
+- `/audio_input`: マイクからの音声入力
+- `/speech_recognition`: 音声認識結果
+- `/dialogue_response`: 対話システムの応答
+- `/speech_synthesis`: 音声合成結果
+- `/audio_output`: スピーカーへの音声出力
+
+### 7.3 deep_modelブランチの特徴
+実験的な機能として、ディープラーニングモデルを使用した高度な音声処理が可能：
+- Whisper（OpenAI）による高精度音声認識
+- BERT/GPTベースの対話モデル
+- WaveNetやTacotron2による自然な音声合成
+- GPUを推奨（CUDA対応）
+
+使用方法：
+```bash
+git checkout deep_model
+# 追加の依存関係をインストール
+pip install -r requirements_deep.txt
+```
+
+
+## 8. ライセンスと謝辞
+本システムは研究目的で開発されています．
+各種APIの利用規約に従ってご使用ください．
+
+### 使用している主要なライブラリ・API
+- ROS2 Humble
+- Google Cloud Speech-to-Text API
+- A3RT Talk API
+- VOICEVOX
+- PyAudio
+- その他多数のオープンソースライブラリ

@@ -14,412 +14,369 @@ nishimura@is.tokushima-u.ac.jp
 ](https://www.youtube.com/watch?v=2EkJCJpSpS4)
 
 ## Overview
-This is a ROS2-compatible version of a real-time spoken dialog system. The system is simple and its contents are also simple, so you can understand how to make a spoken dialog system ROS-compatible. Basically, the system consists of ROS wrapped communication between modules of a python implementation of a spoken dialog system. This configuration makes it possible to monitor the communication contents in ROS, and to check, record, and replay the communication contents, thus dramatically increasing the efficiency of system development and debugging.
+DiaROS is a ROS2-compatible real-time spoken dialog system. While the system architecture is straightforward, it effectively demonstrates how to integrate a spoken dialog system with ROS2. The implementation wraps inter-module communication of a Python-based spoken dialog system with ROS2 messaging. This architecture enables monitoring, recording, and replaying communication content through ROS2 tools, significantly improving development and debugging efficiency.
 
-## Cautions
-- This configuration still contains some bugs. It is still in the bug-fixing stage.
-- Dashboard (implemented by Node.js, Vue.js) does not work.
-  - The spoken dialog system works without it.
+## Important Notes
+- This system is still under development and may contain bugs.
 
-
-# How to install the system
-The system installation procedure is described below.
-
-## 0. System environment (during development)
-- OS: Ubuntu 20.04.3
+## Branch Information
+- `main`: Standard branch for stable releases
+- `deep_model`: Experimental branch featuring deep learning-based speech recognition and synthesis models
+  - Provides high-accuracy speech recognition capabilities
+  - Implements more natural speech synthesis
+  - GPU recommended (CPU operation also supported)
 
 
-## 1. Install ROS2 Foxy
-https://docs.ros.org/en/foxy/Installation/Ubuntu-Install-Binary.html
+# System Installation Guide
+The following sections describe the complete system installation process.
 
-- Execute in order
-- It should finish without any problems and the test should work.
-
-
-### (extra) Turtlesim test!
-https://docs.ros.org/en/foxy/Tutorials.html
-
-```shell
-$ sudo apt update
-$ sudo apt install ros-foxy-turtlesim
-```
-
-```shell
-[shell 1]
-$ ros2 run turtlesim turtlesim_node
-
-[shell 2]
-$ ros2 run turtlesim turtle_teleop_key
-```
+## 0. System Requirements
+- OS: Ubuntu 22.04 LTS
+- Python: 3.10.x (Ubuntu 22.04 default)
+- ROS2: Humble Hawksbill
 
 
-## 2. Python environment installation
-### 2.1 pyenv installation
-Pyenv installation notes for a fresh Ubuntu 20.04 environment
-https://qiita.com/sho1_24/items/96c3c9e71629de3801fb
+## 1. Install ROS2 Humble
+Follow the official installation guide: https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html
 
-- Installing libraries
-```shell
-$ sudo apt install git gcc make zlib1g-dev libffi-dev libbz2-dev libssl-dev libreadline-dev libsqlite3-dev python3-tk tk-dev
-```
-
-- Installing pyenv
-```shell
-$ git clone https://github.com/pyenv/pyenv.git ~/.pyenv
-$ git clone https://github.com/pyenv/pyenv-update.git ~/.pyenv/plugins/pyenv-update
-```
-
-- Set environment variables
-The `PYTHONPATH` setting is the default module installation location for python, and the module installation location with `--user` should be appended.  
-Pay attention to the python version, etc.
+### 1.1 Basic Installation
 ```bash
-# .bashrc
+# Configure locale
+sudo locale-gen en_US en_US.UTF-8
+sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
 
-# for pyenv(python)
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init --path)"
-PPTMP=`python -c "import site; print (site.getsitepackages()[0])"`
-export PYTHONPATH="$PPTMP:$PYTHONPATH"
-PPTMP=`python -m site --user-site`
-export PYTHONPATH="$PPTMP:$PYTHONPATH"
+# Add ROS2 repository
+sudo apt update && sudo apt install curl -y
+sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
+
+# Install ROS2 Humble
+sudo apt update
+sudo apt upgrade -y
+sudo apt install ros-humble-desktop -y
+sudo apt install ros-dev-tools -y
+
+# Add environment setup to .bashrc
+echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 ```
 
-
-Create symbolic link to standard OS python command
-```shell
-$ sudo apt install python-is-python3
-```
-
-### 2.2 Python installation
-```
-Check for installable version
-$ pyenv install -l | less
-
-Install Python
-$ pyenv install 3.8.13
-
-Set version
-$ pyenv global 3.8.13
-```
-
-
-## 3. installation of spoken dialog system
-
-### 3.1 Key acquisition and deployment of A3RT and Google API 
-- Get API key for A3RT: https://a3rt.recruit.co.jp/product/talkAPI/
-- Copy and paste the API key into a text file and save it (text file containing only the API key)
-- Place the text file in the following location (replace the HOME directory with your own)
-```
-/home/nishimura/secret/nishimura_A3RT_APIKEY.data
-```
-
-- Create a Google API key and put it in the following directory.
-```
-/home/nishimura/secret/nishimura_SDS.json
-```
-
-- Add the paths to the A3RT API key and Google API key to the environment variables.  
-Add the following to `~/.bashrc`.
-```shell
-export GOOGLE_APPLICATION_CREDENTIALS="/home/nishimura/secret/nishimura_SDS.json"
-export A3RT_APIKEY="/home/nishimura/secret/nishimura_A3RT_APIKEY.data"
-```
-
-
-### 3.2 Spoken dialog System Module Installation
-Execute the following in ``DiaROS/DiaROS_py``.
-
+### 1.2 (Optional) Turtlesim Test
 ```bash
-$ python -m pip install . --user
+# Run in separate terminals
+# Terminal 1:
+ros2 run turtlesim turtlesim_node
+
+# Terminal 2:
+ros2 run turtlesim turtle_teleop_key
 ```
 
 
-### 3.3 Installation of python modules for spoken dialog system
+## 2. Install Dependencies
 
-**# Installing google cloud speech api**
-```shell
-$ python -m pip install google gcloud google-auth google-api-core google-cloud-speech grpc-google-cloud-speech-v1beta1 grpcio grpcio-tools
-```
-
-```shell
-$ python -m pip install -U numpy scipy requests pyworld matplotlib==2.*
-```
-
-**# Installing pyaudio**
-
-```shell
-$ sudo apt-get install portaudio19-dev
-$ pip install pyaudio
-```
-
-
-**# Installing aubio**.
-
-You can't just pip it in.
-Download and install the latest version from github.
-
-(Download via pip command!).
-
-```shell:
-$ python -m pip install git+https://github.com/aubio/aubio/
-```
-
-**# Other installations**.
-```shell:
-$ python -m pip install gtts playsound
-```
-
-### 3.4 Building the ROS package (MSG)
-First, install colcon.
+### 2.1 System Packages
 ```bash
-$ sudo apt install python3-colcon-common-extensions
+# Development tools
+sudo apt update
+sudo apt install -y git gcc g++ make cmake build-essential
+
+# Python-related packages
+sudo apt install -y python3-pip python3-dev python3-venv
+sudo apt install -y python-is-python3
+
+# Audio-related packages
+sudo apt install -y portaudio19-dev libportaudio2
+sudo apt install -y libsndfile1-dev
+
+# Additional dependencies
+sudo apt install -y libcairo2-dev libgirepository1.0-dev
+sudo apt install -y libxt-dev libssl-dev libffi-dev
+sudo apt install -y zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev
+sudo apt install -y python3-tk tk-dev
 ```
 
-In ``/home/nishimura/program/DiaROS/DiaROS_ros``
+### 2.2 Create Python Virtual Environment (Recommended)
+```bash
+# Create virtual environment in project directory
+python3 -m venv venv
+source venv/bin/activate
+
+# Upgrade pip and tools
+pip install --upgrade pip setuptools wheel
+```
+
+
+## 3. Install Spoken Dialog System
+
+### 3.1 API Key Setup and Configuration
+
+#### A3RT Talk API (Conversational Response Generation)
+1. Obtain API key: https://a3rt.recruit.co.jp/product/talkAPI/
+2. Save API key to a text file
+3. Configure environment variables
+
+#### Google Speech-to-Text API (Speech Recognition)
+1. Create a project in Google Cloud Console
+2. Enable Speech-to-Text API
+3. Create service account key (JSON format)
+4. Detailed instructions: https://cloud.google.com/speech-to-text/docs/before-you-begin
+
+#### Environment Variable Configuration
+Add the following to `~/.bashrc`:
+```bash
+# API keys for spoken dialog system
+export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
+export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
+
+# ROS2 environment
+source /opt/ros/humble/setup.bash
+```
+
+### 3.2 Install Python Packages
 
 ```bash
-# Move directories and configure environment
-$ cd /home/nishimura/program/DiaROS/DiaROS_ros
-$ . /home/nishimura/ros2_foxy/ros2-linux/local_setup.bash
+# Google Cloud Speech API
+pip install google-cloud-speech
 
-# Build msg folder (interfaces)
-$ colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
-$ . . /install/local_setup.bash
+# Audio processing libraries
+pip install numpy scipy matplotlib
+pip install pyaudio sounddevice
+pip install aubio  # or: pip install git+https://github.com/aubio/aubio/
 
-# Build ros2 module (diaros_package)
-$ colcon build --packages-select diaros_package
-$ . . /install/local_setup.bash
-``` 
+# Speech synthesis libraries
+pip install gtts playsound pydub
 
+# Additional utilities
+pip install requests pyworld
 
-
-
-
-## 4. dashboard installation (This section is bug fix in progress)
-Note: The following is still buggy and cannot be realized, because the versions of the nodejs and vue modules do not match and the development environment cannot be reproduced. Please let me know if anyone has been able to get it to work.
-
-### 4.1 npm install
-```shell
-$ sudo apt update
-$ sudo apt install curl
-$ curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-$ sudo apt-get install -y nodejs
-# $ sudo apt-get install gcc g++ make
+# ROS2-related packages (for GUI)
+pip install PyQt5==5.15.* PySide2 pydot
 ```
 
-confirm
-```
-$ node -v
-$ npm -v
-```
+### 3.3 Install VOICEVOX (Japanese Speech Synthesis)
 
-Upgrade npm version.
-```
-$ sudo npm install -g npm
-```
+VOICEVOX is a high-quality Japanese speech synthesis engine.
 
-### 4.2 Dashboard Installation
-Dashboard: server and client installation
+1. Download VOICEVOX engine
 ```bash
-$ cd /home/nishimura/program/DiaROS/dialog-dashboard
-
-# Install modules
-$ cd 
-$ sudo npm install -g typescript
-$ sudo npm install -g require
-$ sudo npm i @types/node
-$ sudo npm audit fix --force
-
-
-# Install server
-$ cd server
-$ sudo npm ci
-$ sudo npm run build
-
-# Install client
-$ cd ...
-$ sudo npm ci
-$ sudo npm run build
+# Check latest version: https://github.com/VOICEVOX/voicevox_engine/releases
+wget https://github.com/VOICEVOX/voicevox_engine/releases/download/0.14.1/voicevox_engine-linux-cpu-0.14.1.7z
+7z x voicevox_engine-linux-cpu-0.14.1.7z
 ```
 
-Run the following as instructed
-```shell:
-$ sudo npm audit fix --force
-```
-
-If ERESOLVE could not resolve
-https://github.com/vuejs/vue-cli/issues/6270
-```
-$ npm i --legacy-peer-deps
-```
-
-If you get Error: Rule can only have one resource source
-https://stackoverflow.com/questions/64373393/error-rule-can-only-have-one-resource-source-provided-resource-and-test-incl
-```
-$ sudo npm uninstall webpack
-$ sudo npm install webpack@^4.45.0
-```
-
-Cannot find module 'webpack/lib/RuleSet'.
-https://github.com/vuejs/vue-loader/issues/1586
-```
-$ sudo npm i vue-loader
-
-$ sudo npm install --save-dev webpack webpack-cli html-webpack-plugin webpack-dev-server webpack-dev-middleware
-````
-
-
-
-## 5. run steps
-
-### 5.1 Start the spoken dialog system
+2. Start VOICEVOX
 ```bash
-$ cd /home/nishimura/program/DiaROS/DiaROS_ros
-$ . /home/nishimura/ros2_foxy/ros2-linux/local_setup.bash
-$ . /home/nishimura/program/DiaROS/DiaROS_ros/install/local_setup.bash
+cd voicevox_engine-linux-cpu-0.14.1
+./run
+# Runs on http://localhost:50021 by default
+```
 
-# Run spoken dialog system
-$ ros2 launch diaros_package sdsmod.launch.py
-``` 
-
-
-### 5.2 (not yet working) dashboard launch
+3. Install Python client
 ```bash
-$ cd C:\sayonari\DiaROS\dialog-dashboard
-$ npm run start # start server
-$ npm run serve # start client
+pip install voicevox-client
 ```
 
-### 5.3 (not working yet) run ros module for dashboard and admin tools
+### 3.4 Install Spoken Dialog System Modules
+Execute the following in the `DiaROS/DiaROS_py` directory:
+
 ```bash
-$ cd C:\sayonari\DiaROS\spoken-dialog-system
-$ call C:\dev\ros2_foxy\local_setup.bat
-$ call install\local_setup.bat
-ros2 run diaros_package dr # Dashboard integration
-ros2 run diaros_package mm # for admin tools
+cd ~/DiaROS/DiaROS_py
+pip install -e .
 ```
 
+### 3.5 Build ROS Packages
 
-
-
-## 6. Utilizing the functions of ROS2
-### 6.0 environment setup
 ```bash
-$ python -m pip install PyQt5==5.12 PySide2 pydot
-$ pip3 uninstall PyQt5 # This will remove the pip3 version, as it will not work with mixed versions!
-```
-https://ar-ray.hatenablog.com/entry/2021/03/10/203358
+# Install colcon
+sudo apt install python3-colcon-common-extensions
 
+# Navigate to workspace
+cd ~/DiaROS/DiaROS_ros
 
-### 6.1 rqt
-http://docs.ros.org/en/foxy/Concepts/About-RQt.html
+# Build interfaces (message types)
+colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
+source ./install/local_setup.bash
 
-RQt is a Qt-based GUI framework for ROS. ros2 foxy includes the following rqt tools by default.  
-(displaying candidates with TAB completion)
-
-```
-$ ros2 run rqt[TAB]
-rqt                 rqt_gui             rqt_plot            rqt_reconfigure     rqt_top
-rqt_action          rqt_gui_cpp         rqt_publisher       rqt_service_caller  rqt_topic
-rqt_console         rqt_gui_py          rqt_py_common       rqt_shell           
-rqt_graph           rqt_msg             rqt_py_console      rqt_srv     
+# Build DiaROS package
+colcon build --packages-select diaros_package
+source ./install/local_setup.bash
 ```
 
 
-### 6.2 rqt_graph
-```
-$ ros2 run rqt_graph rqt_graph
-```
+## 4. Execution Instructions
 
-### 6.3 rqt_plot
-```
-$ ros2 run rqt_plot rqt_plot
-```
+### 4.1 Start the Spoken Dialog System
+```bash
+# In a new terminal
+cd ~/DiaROS/DiaROS_ros
+source /opt/ros/humble/setup.bash
+source ./install/local_setup.bash
 
-If you get an error and it doesn't work, upgrade the ros package with apt-get upgrade.
-```
-$ sudo apt-get update
-$ sudo apt-get upgrade
+# If using VOICEVOX, start it beforehand
+# (In separate terminal: ./voicevox_engine/run)
 
-$ python -m pip install --upgrade pydot pyqt5
+# Launch spoken dialog system
+ros2 launch diaros_package sdsmod.launch.py
 ```
 
+### 4.2 Stop the System
+Press `Ctrl+C` to terminate the system.
 
 
-### 6.x rqt_bag
-https://zenn.dev/techkind/articles/2106100906_ros2_rqt_bag
+## 5. Utilizing ROS2 Monitoring Tools
 
-The rqt_bag command allows you to visualize the flow of topics in a GUI display.
-This tool is not included in ros2 foxy, so please refer to the above URL to install the tool.
-
-
-
-
-## 9. The following are workarounds for runtime errors.
-### 9.1 If your sound device (USB headset) is not recognized!
-https://kazuhira-r.hatenablog.com/entry/2020/02/28/000625
-
-```
-## Check the version
-$ sudo apt search ^linux-headers-
-
-# 5.13.0-41 looked new, put it in!
-$ sudo apt install linux-image-5.13.0-41-generic linux-headers-5.13.0-41-generic linux-modules-extra-5.13.0-41-generic
+### 5.1 rqt_graph - Visualize Nodes and Topics
+```bash
+# Visualize system communication structure
+ros2 run rqt_graph rqt_graph
 ```
 
+### 5.2 ros2 topic - Topic Monitoring
+```bash
+# List available topics
+ros2 topic list
 
-### 9.2 voice.py without voice synthesis for windows!
-When I try to load gtts with python, it says ``# No module named gi``.
-```
-$ python
->>> import gtts
-(error) No module named gi
-```
+# Monitor specific topic content in real-time
+ros2 topic echo /speech_recognition
+ros2 topic echo /dialogue_response
+ros2 topic echo /speech_synthesis
 
-In that case, execute the following.  
-https://stackoverflow.com/questions/71369726/no-module-named-gi
-```
-$ sudo apt install libcairo2-dev
-$ sudo apt install libxt-dev
-$ sudo apt install libgirepository1.0-dev
-$ pip install pycairo
-$ pip install PyGObject
+# Check topic frequency
+ros2 topic hz /audio_input
 ```
 
+### 5.3 ros2 bag - Data Recording and Playback
+```bash
+# Record all topics
+ros2 bag record -a
 
-### 9.3 Fix default sound device
-https://wolfgang-ziegler.com/blog/prevent-changing-of-default-ubuntu-sound-device
+# Record specific topics only
+ros2 bag record /speech_recognition /dialogue_response
 
-- Check input device list.
-```
-$ pactl list short sources
-```
+# View recorded data information
+ros2 bag info <bag_file>
 
-- Set to default.
-```
-$ pactl set-default-source alsa_input.usb-Sennheiser_Communications_Sennheiser_USB_headset-00.mono-fallback
-```
-
-- Add the above settings to '~/.bashrc'.
-
-
-### 9.4 Unknown PCM cards appear every time
-https://stackoverflow.com/questions/31603555/unknown-pcm-cards-pcm-rear-pyaudio
-```
-ALSA lib pcm_dsnoop.c:641:(snd_pcm_dsnoop_open) unable to open slave
-ALSA lib pcm_dmix.c:1089:(snd_pcm_dmix_open) unable to open slave
-ALSA lib pcm.c:2642:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.rear
-ALSA lib pcm.c:2642:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.center_lfe
-ALSA lib pcm.c:2642:(snd_pcm_open_noupdate) Unknown PCM cards.pcm.side
-ALSA lib pcm_oss.c:377:(_snd_pcm_oss_open) Unknown field port
-ALSA lib pcm_oss.c:377:(_snd_pcm_oss_open) Unknown field port
-ALSA lib pcm_usb_stream.c:486:(_snd_pcm_usb_stream_open) Invalid type for card
-ALSA lib pcm_usb_stream.c:486:(_snd_pcm_usb_stream_open) Invalid type for card
-ALSA lib pcm_dmix.c:1089:(snd_pcm_dmix_open) unable to open slave
+# Playback recorded data
+ros2 bag play <bag_file>
 ```
 
-Unknown PCM cards are removed by commenting out relevant lines in `/usr/share/alsa/alsa.conf`.  
-(Comment out settings for cards you don't use or don't know.)
+### 5.4 rqt_plot - Data Visualization
+```bash
+# Display numerical data such as audio levels in graphs
+ros2 run rqt_plot rqt_plot
+```
+
+### 5.5 Other Useful Commands
+```bash
+# List nodes
+ros2 node list
+
+# Node information
+ros2 node info /speech_recognition_node
+
+# List services
+ros2 service list
+
+# List parameters
+ros2 param list
+```
 
 
+## 6. Troubleshooting
+
+### 6.1 Sound Device (USB Headset) Not Recognized
+```bash
+# Update kernel modules
+sudo apt update
+sudo apt upgrade linux-generic
+
+# After reboot, check devices
+pactl list short sources
+pactl list short sinks
+```
+
+### 6.2 Fix Default Sound Device
+```bash
+# Check input device list
+pactl list short sources
+
+# Set default device
+pactl set-default-source <device_name>
+
+# Add to ~/.bashrc for persistence
+echo "pactl set-default-source <device_name>" >> ~/.bashrc
+```
+
+### 6.3 Suppress ALSA-Related Error Messages
+For errors like "Unknown PCM cards":
+```bash
+# Comment out unnecessary settings in /usr/share/alsa/alsa.conf
+sudo nano /usr/share/alsa/alsa.conf
+# Comment out lines like cards.pcm.rear, cards.pcm.center_lfe, etc.
+```
+
+### 6.4 Fix Python GTTS Errors
+```bash
+# For "No module named 'gi'" error
+sudo apt install libcairo2-dev libgirepository1.0-dev
+pip install pycairo PyGObject
+```
+
+### 6.5 ROS2-Related Issues
+```bash
+# Check environment variables
+printenv | grep ROS
+
+# Clean rebuild workspace
+cd ~/DiaROS/DiaROS_ros
+rm -rf build/ install/ log/
+colcon build
+```
+
+
+## 7. Developer Information
+
+### 7.1 Project Structure
+```
+DiaROS/
+├── DiaROS_py/          # Python spoken dialog system modules
+├── DiaROS_ros/         # ROS2 packages
+│   ├── interfaces/     # Message type definitions
+│   └── diaros_package/ # Main package
+└── docs/               # Documentation
+```
+
+### 7.2 Main ROS Topics
+- `/audio_input`: Audio input from microphone
+- `/speech_recognition`: Speech recognition results
+- `/dialogue_response`: Dialog system responses
+- `/speech_synthesis`: Speech synthesis results
+- `/audio_output`: Audio output to speakers
+
+### 7.3 deep_model Branch Features
+The experimental branch offers advanced speech processing using deep learning models:
+- Whisper (OpenAI) for high-accuracy speech recognition
+- BERT/GPT-based dialog models
+- WaveNet and Tacotron2 for natural speech synthesis
+- GPU recommended (CUDA support)
+
+Usage:
+```bash
+git checkout deep_model
+# Install additional dependencies
+pip install -r requirements_deep.txt
+```
+
+
+## 8. License and Acknowledgments
+This system is developed for research purposes.
+Please comply with the terms of service of each API used.
+
+### Major Libraries and APIs Used
+- ROS2 Humble
+- Google Cloud Speech-to-Text API
+- A3RT Talk API
+- VOICEVOX
+- PyAudio
+- Various other open-source libraries

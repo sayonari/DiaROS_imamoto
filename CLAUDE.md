@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### System Setup and Build
 ```bash
 # Setup ROS2 environment (required before any ROS commands)
-cd /home/DiaROS/DiaROS_deep_model/DiaROS_ros
-source /opt/ros/foxy/setup.bash  # or your ROS2 installation path
+cd ~/DiaROS_imamoto/DiaROS_ros
+source /opt/ros/humble/setup.bash  # or your ROS2 installation path
 source ./install/local_setup.bash
 
 # Build the ROS packages
@@ -90,10 +90,11 @@ ROS2 wrappers that enable:
 #### Custom Message Interfaces (`interfaces/`)
 Defines ROS2 message types for dialog system communication.
 
-### Dashboard (Currently Non-Functional)
-- Vue.js/Node.js web interface in `dialogue-dashboard/`
-- Intended for real-time system monitoring and control
-- Known to have dependency issues and is not operational
+### Monitoring Tools
+- Use built-in ROS2 tools for system monitoring:
+  - `ros2 topic echo` for real-time topic monitoring
+  - `rqt_graph` for visual system topology
+  - `ros2 bag` for recording and playback
 
 ## API Requirements
 
@@ -109,10 +110,10 @@ export A3RT_APIKEY="/path/to/a3rt/apikey.data"
 
 ## Development Environment
 
-- **OS**: Ubuntu 20.04+ 
-- **ROS2**: Foxy (primary tested version)
-- **Python**: 3.8.13 (managed via pyenv)
-- **Key Dependencies**: PyAudio, aubio, torch, transformers, rclpy
+- **OS**: Ubuntu 22.04 LTS 
+- **ROS2**: Humble Hawksbill (primary supported version)
+- **Python**: 3.10.x (Ubuntu 22.04 default)
+- **Key Dependencies**: PyAudio, aubio, torch, transformers, rclpy, VOICEVOX
 
 ## System Architecture Flow
 
