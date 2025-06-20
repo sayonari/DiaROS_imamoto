@@ -16,7 +16,7 @@ class RosAutomaticSpeechRecognition(Node):
         self.sub_mic = self.create_subscription(Float32MultiArray, 'mic_audio_float32', self.audio_callback, 10)
         self.pub_asr = self.create_publisher(Iasr, 'ASRtoNLU', 1)  # トピック名を変更
         # self.pub_mm = self.create_publisher(Imm, 'MM', 1)
-        self.timer = self.create_timer(0.005, self.callback)
+        self.timer = self.create_timer(0.01, self.callback)  # 10ms to match audio input rate
 
     def audio_callback(self, msg):
         audio_np = np.array(msg.data, dtype=np.float32)
@@ -50,11 +50,8 @@ def main(args=None):
     asr = AutomaticSpeechRecognition()
     rasr = RosAutomaticSpeechRecognition(asr)
 
-    ros = threading.Thread(target=runROS, args=(rasr,))
-    mod = threading.Thread(target=runASR, args=(asr,))
-
-    ros.setDaemon(True)
-    mod.setDaemon(True)
+    ros = threading.Thread(target=runROS, args=(rasr,), daemon=True)
+    mod = threading.Thread(target=runASR, args=(asr,), daemon=True)
 
     ros.start()
     mod.start()

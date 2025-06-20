@@ -11,7 +11,7 @@ class MicPublisher(Node):
     def __init__(self):
         super().__init__('speech_input')
         self.pub_mic = self.create_publisher(Float32MultiArray, 'mic_audio_float32', 10)
-        self.timer = self.create_timer(0.005, self.publish_audio)
+        self.timer = self.create_timer(0.01, self.publish_audio)  # 10ms to match speechInput chunk size
         self.send_count = 0
 
     def publish_audio(self):
@@ -50,12 +50,10 @@ def main(args=None):
     rclpy.init(args=args)
     mic_publisher = MicPublisher()
     # SpeechInputを別スレッドで起動
-    mic_thread = threading.Thread(target=runSpeechInput)
-    mic_thread.setDaemon(True)
+    mic_thread = threading.Thread(target=runSpeechInput, daemon=True)
     mic_thread.start()
     # runROSをマルチスレッドで起動
-    ros_thread = threading.Thread(target=runROS, args=(mic_publisher,))
-    ros_thread.setDaemon(True)
+    ros_thread = threading.Thread(target=runROS, args=(mic_publisher,), daemon=True)
     ros_thread.start()
     shutdown()
     mic_publisher.destroy_node()

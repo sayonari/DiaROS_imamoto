@@ -276,6 +276,7 @@ class AutomaticSpeechRecognition:
 
         mic_input = np.array([], dtype=np.float32)  # モデル入力用バッファ
         mic_stack = np.array([], dtype=np.float32)  # マイク入力スタック用バッファ
+        MAX_MIC_INPUT_LENGTH = INPUT_LEN * 2  # Maximum buffer size to prevent memory leak
         last_sent = ""
         start_time = time.time()
         last_time = time.time()
@@ -289,8 +290,11 @@ class AutomaticSpeechRecognition:
                 if len(mic_stack) >= int(SAMPLE_RATE * 0.1):
                     mic_input = np.append(mic_input, mic_stack)
                     mic_stack = np.array([], dtype=np.float32)  # スタックをクリア
-                    # 5秒を超えたら古いデータから捨てる
+                    # 5秒を超えたら古いデータから捨てる（メモリリーク防止）
                     if len(mic_input) > INPUT_LEN:
+                        mic_input = mic_input[-INPUT_LEN:]
+                    # 追加の安全装置：最大長制限
+                    elif len(mic_input) > MAX_MIC_INPUT_LENGTH:
                         mic_input = mic_input[-INPUT_LEN:]
                     array = mic_input.astype(np.float32)
                     inputs = self.processor(array, sampling_rate=SAMPLE_RATE, return_tensors="pt", padding=True)

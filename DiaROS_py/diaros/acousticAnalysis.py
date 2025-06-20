@@ -10,7 +10,7 @@ import json
 tolerance = 0.8
 win_s = 2048
 # hop_s = 220
-hop_s = 240
+hop_s = 160  # Match speechInput chunk size for consistency
 f0_upper = 600.0
 VAD_THRES_DB = 150
 TAIL_MARGIN = 500  # 発話終了判定のマージン（ミリ秒）

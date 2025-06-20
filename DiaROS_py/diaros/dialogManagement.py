@@ -79,7 +79,10 @@ class DialogManagement:
 
         self.prev_bc_time = None  # 前回BackChannel受信時刻
 
-        self.audio_player_path = "/home/DiaROS/DiaROS_deep_model/DiaROS_py/diaros/hai.wav"
+        # Use relative path or environment variable for audio file
+        import os
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.audio_player_path = os.path.join(base_dir, "hai.wav")
         self.last_back_channel_play_time = 0
 
         sys.stdout.write('DialogManagement start up.\n')

@@ -14,7 +14,7 @@ class RosAcousticAnalysis(Node):
         self.sub_audio = self.create_subscription(Float32MultiArray, 'mic_audio_float32', self.audio_callback, 10)  # 修正
         self.pub_iaa = self.create_publisher(Iaa, 'AAtoDM', 10)
         # self.pub_mm = self.create_publisher(Imm, 'MM', 1)
-        self.timer = self.create_timer(0.02, self.publish_acoustic)
+        self.timer = self.create_timer(0.01, self.publish_acoustic)  # 10ms to match audio input rate
         self.last_sent = None
 
     def audio_callback(self, msg):
