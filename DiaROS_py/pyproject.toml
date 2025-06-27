@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "diaros"
+version = "0.0.1"
+description = "DiaROS: A ROS2-based real-time spoken dialog system"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Ryota Nishimura", email = "nishimura@is.tokushima-u.ac.jp"},
+]
+maintainers = [
+    {name = "Ryota Nishimura", email = "nishimura@is.tokushima-u.ac.jp"},
+]
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "pyaudio",
+    "sounddevice",
+    "aubio",
+    "requests",
+    "torch",
+    "transformers",
+    "openai",
+    "pyworld",
+    "webrtcvad",
+    "librosa",
+    "soundfile",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "isort",
+    "flake8",
+]
+
+cloud = [
+    "google-cloud-speech",
+]
+
+[project.urls]
+Homepage = "https://github.com/sayonari/DiaROS_imamoto"
+Repository = "https://github.com/sayonari/DiaROS_imamoto"
+
+[tool.setuptools]
+packages = ["diaros"]
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.setuptools.package-data]
+"diaros" = ["*.py"]

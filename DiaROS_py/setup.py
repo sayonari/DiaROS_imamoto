@@ -1,7 +1,5 @@
 from setuptools import setup
 
-setup(
-    name='diaros',
-    version='0.0.1',
-    packages=['diaros'],
-)
+# Setup configuration is now in pyproject.toml
+# This file is kept for backward compatibility
+setup()
