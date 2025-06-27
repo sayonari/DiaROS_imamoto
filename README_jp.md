@@ -109,26 +109,9 @@ pip install --upgrade pip setuptools wheel
 
 ## 3. 音声対話システムインストール
 
-### 3.1 APIキーの取得と設定
-
-#### A3RT Talk API（雑談応答生成）
-1. APIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/
-2. APIキーをテキストファイルに保存
-3. 環境変数に設定
-
-#### Google Speech-to-Text API（音声認識）
-1. Google Cloud Consoleでプロジェクトを作成
-2. Speech-to-Text APIを有効化
-3. サービスアカウントキーを作成（JSON形式）
-4. 詳細手順: https://cloud.google.com/speech-to-text/docs/before-you-begin?hl=ja
-
-#### 環境変数の設定
-`~/.bashrc` に以下を追加:
+### 3.1 環境設定
+`~/.bashrc` にROS2環境を追加:
 ```bash
-# 音声対話システム用APIキー
-export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
-export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
-
 # ROS2環境
 source /opt/ros/humble/setup.bash
 ```
@@ -136,8 +119,8 @@ source /opt/ros/humble/setup.bash
 ### 3.2 Pythonパッケージのインストール
 
 ```bash
-# Google Cloud Speech API
-pip install google-cloud-speech
+# ディープラーニングフレームワーク（ローカル音声認識・言語生成用）
+pip install torch transformers
 
 # 音声処理関連
 pip install numpy scipy matplotlib
@@ -152,6 +135,9 @@ pip install requests pyworld
 
 # ROS2関連（GUI用）
 pip install PyQt5==5.15.* PySide2 pydot
+
+# オプション：Google Cloud Speech API（クラウドベース認識を使用する場合）
+# pip install google-cloud-speech
 ```
 
 ### 3.3 VOICEVOX（日本語音声合成）のインストール
@@ -375,8 +361,40 @@ pip install -r requirements_deep.txt
 
 ### 使用している主要なライブラリ・API
 - ROS2 Humble
-- Google Cloud Speech-to-Text API
-- A3RT Talk API
-- VOICEVOX
+- Hugging Face Transformers（ローカル音声認識・言語生成）
+- VOICEVOX（日本語音声合成）
 - PyAudio
 - その他多数のオープンソースライブラリ
+
+
+## 9. 付録：外部APIの使用（オプション）
+
+DiaROSは現在、外部APIなしで完全にローカルで動作しますが、より高い精度を求める場合はクラウドベースのサービスを使用することも可能です：
+
+### 9.1 Google Speech-to-Text API（音声認識）
+1. Google Cloud Consoleでプロジェクトを作成
+2. Speech-to-Text APIを有効化
+3. サービスアカウントキーを作成（JSON形式）
+4. 詳細手順: https://cloud.google.com/speech-to-text/docs/before-you-begin?hl=ja
+5. 環境変数を設定:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
+   ```
+
+### 9.2 OpenAI API（応答生成）
+1. https://platform.openai.com/ でアカウント作成
+2. APIキーを作成
+3. 環境変数を設定:
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+4. `naturalLanguageGeneration.py`で`self.use_local_model = False`に変更
+
+### 9.3 A3RT Talk API（代替応答生成）
+1. APIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/
+2. APIキーをテキストファイルに保存
+3. 環境変数を設定:
+   ```bash
+   export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
+   ```
+   注：現在の実装ではOpenAI APIまたはローカルモデルが使用されています

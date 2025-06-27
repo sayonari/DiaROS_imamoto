@@ -109,26 +109,9 @@ pip install --upgrade pip setuptools wheel
 
 ## 3. Install Spoken Dialog System
 
-### 3.1 API Key Setup and Configuration
-
-#### A3RT Talk API (Conversational Response Generation)
-1. Obtain API key: https://a3rt.recruit.co.jp/product/talkAPI/
-2. Save API key to a text file
-3. Configure environment variables
-
-#### Google Speech-to-Text API (Speech Recognition)
-1. Create a project in Google Cloud Console
-2. Enable Speech-to-Text API
-3. Create service account key (JSON format)
-4. Detailed instructions: https://cloud.google.com/speech-to-text/docs/before-you-begin
-
-#### Environment Variable Configuration
-Add the following to `~/.bashrc`:
+### 3.1 Environment Configuration
+Add ROS2 environment to `~/.bashrc`:
 ```bash
-# API keys for spoken dialog system
-export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
-export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
-
 # ROS2 environment
 source /opt/ros/humble/setup.bash
 ```
@@ -136,8 +119,8 @@ source /opt/ros/humble/setup.bash
 ### 3.2 Install Python Packages
 
 ```bash
-# Google Cloud Speech API
-pip install google-cloud-speech
+# Deep learning frameworks (for local speech recognition and language generation)
+pip install torch transformers
 
 # Audio processing libraries
 pip install numpy scipy matplotlib
@@ -152,6 +135,9 @@ pip install requests pyworld
 
 # ROS2-related packages (for GUI)
 pip install PyQt5==5.15.* PySide2 pydot
+
+# Optional: Google Cloud Speech API (if using cloud-based recognition)
+# pip install google-cloud-speech
 ```
 
 ### 3.3 Install VOICEVOX (Japanese Speech Synthesis)
@@ -375,8 +361,40 @@ Please comply with the terms of service of each API used.
 
 ### Major Libraries and APIs Used
 - ROS2 Humble
-- Google Cloud Speech-to-Text API
-- A3RT Talk API
-- VOICEVOX
+- Hugging Face Transformers (local speech recognition and language generation)
+- VOICEVOX (Japanese speech synthesis)
 - PyAudio
 - Various other open-source libraries
+
+
+## 9. Appendix: Using External APIs (Optional)
+
+While DiaROS now runs completely locally without external APIs, you can optionally configure it to use cloud-based services for potentially higher accuracy:
+
+### 9.1 Google Speech-to-Text API (Speech Recognition)
+1. Create a project in Google Cloud Console
+2. Enable Speech-to-Text API
+3. Create service account key (JSON format)
+4. Detailed instructions: https://cloud.google.com/speech-to-text/docs/before-you-begin
+5. Set environment variable:
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
+   ```
+
+### 9.2 OpenAI API (Response Generation)
+1. Sign up at https://platform.openai.com/
+2. Create an API key
+3. Set environment variable:
+   ```bash
+   export OPENAI_API_KEY="your-api-key-here"
+   ```
+4. Modify `naturalLanguageGeneration.py` to set `self.use_local_model = False`
+
+### 9.3 A3RT Talk API (Alternative Response Generation)
+1. Obtain API key: https://a3rt.recruit.co.jp/product/talkAPI/
+2. Save API key to a text file
+3. Configure environment variable:
+   ```bash
+   export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
+   ```
+   Note: Current implementation uses OpenAI API or local models instead
