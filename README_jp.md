@@ -19,12 +19,13 @@ nishimura@is.tokushima-u.ac.jp
 ## 注意事項
 - まだバグが含まれています．バグ取り段階です．
 
-## ブランチについて
-- `main`: 標準ブランチ
-- `deep_model`: ディープラーニングベースの音声認識・合成モデルを使用する実験的ブランチ
-  - 高精度な音声認識が可能
-  - より自然な音声合成を実現
-  - GPU推奨（CPUでも動作可能）
+## システムの特徴
+メインブランチにはディープラーニングベースの音声認識と自然言語生成が含まれています：
+- Hugging Face Transformersを使用した高精度ローカル音声認識
+- 日本語GPT-2モデルを使用したローカル言語生成
+- VOICEVOXによる自然な音声合成
+- 最適なパフォーマンスのためGPU推奨（CPU動作も可能）
+- 完全オフライン動作 - APIキー不要
 
 
 # システムインストール方法
@@ -340,19 +341,12 @@ DiaROS/
 - `/speech_synthesis`: 音声合成結果
 - `/audio_output`: スピーカーへの音声出力
 
-### 7.3 deep_modelブランチの特徴
-実験的な機能として、ディープラーニングモデルを使用した高度な音声処理が可能：
-- Whisper（OpenAI）による高精度音声認識
-- BERT/GPTベースの対話モデル
-- WaveNetやTacotron2による自然な音声合成
-- GPUを推奨（CUDA対応）
-
-使用方法：
-```bash
-git checkout deep_model
-# 追加の依存関係をインストール
-pip install -r requirements_deep.txt
-```
+### 7.3 ディープラーニングモデル
+システムは高度な音声処理のためにディープラーニングモデルを使用しています：
+- **音声認識**: Hugging Face japanese-HuBERT-base-VADLess-ASRモデル
+- **言語生成**: rinna/japanese-gpt2-smallによる自然な応答生成
+- **音声合成**: VOICEVOXによる高品質な日本語音声
+- 最適なパフォーマンスのためGPU推奨（CUDA対応）
 
 
 ## 8. ライセンスと謝辞

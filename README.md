@@ -19,12 +19,13 @@ DiaROS is a ROS2-compatible real-time spoken dialog system. While the system arc
 ## Important Notes
 - This system is still under development and may contain bugs.
 
-## Branch Information
-- `main`: Standard branch for stable releases
-- `deep_model`: Experimental branch featuring deep learning-based speech recognition and synthesis models
-  - Provides high-accuracy speech recognition capabilities
-  - Implements more natural speech synthesis
-  - GPU recommended (CPU operation also supported)
+## System Features
+The main branch includes deep learning-based speech recognition and natural language generation:
+- High-accuracy local speech recognition using Hugging Face Transformers
+- Local language generation using Japanese GPT-2 models
+- Natural speech synthesis with VOICEVOX
+- GPU recommended for optimal performance (CPU operation also supported)
+- Completely offline operation - no API keys required
 
 
 # System Installation Guide
@@ -340,19 +341,12 @@ DiaROS/
 - `/speech_synthesis`: Speech synthesis results
 - `/audio_output`: Audio output to speakers
 
-### 7.3 deep_model Branch Features
-The experimental branch offers advanced speech processing using deep learning models:
-- Whisper (OpenAI) for high-accuracy speech recognition
-- BERT/GPT-based dialog models
-- WaveNet and Tacotron2 for natural speech synthesis
-- GPU recommended (CUDA support)
-
-Usage:
-```bash
-git checkout deep_model
-# Install additional dependencies
-pip install -r requirements_deep.txt
-```
+### 7.3 Deep Learning Models
+The system uses advanced deep learning models for speech processing:
+- **Speech Recognition**: Hugging Face japanese-HuBERT-base-VADLess-ASR model
+- **Language Generation**: rinna/japanese-gpt2-small for natural responses
+- **Speech Synthesis**: VOICEVOX for high-quality Japanese speech
+- GPU recommended for optimal performance (CUDA support available)
 
 
 ## 8. License and Acknowledgments
