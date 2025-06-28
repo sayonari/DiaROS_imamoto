@@ -203,8 +203,16 @@ source ./install/local_setup.bash
 # VOICEVOXを使用する場合は事前に起動しておく
 # （別ターミナルで ./voicevox_engine/run を実行）
 
+# （オプション）音声デバイスの設定とテスト
+cd ~/DiaROS
+python3 scripts/set_default_mic.py
+# または簡易音声テスト
+python3 scripts/test_audio_simple.py
+
 # 音声対話システムの実行
 ros2 launch diaros_package sdsmod.launch.py
+# または設定済みスクリプトを使用（デバイスを設定した場合）
+/path/to/config/launch_diaros_with_mic.sh
 ```
 
 ### 4.2 システムの停止
@@ -284,6 +292,21 @@ pactl list short sinks
 ```
 
 ### 6.2 デフォルトサウンドデバイスの固定
+
+#### 自動設定（推奨）
+```bash
+# 音声デバイス設定スクリプトを使用
+cd ~/DiaROS
+python3 scripts/set_default_mic.py
+```
+
+このスクリプトは以下を実行します：
+- 利用可能な音声入力デバイスを一覧表示
+- デバイスを選択してテスト可能
+- DiaROS用の設定を保存
+- 設定済みデバイスで起動するスクリプトを作成
+
+#### 手動設定
 ```bash
 # 入力デバイス一覧確認
 pactl list short sources
@@ -293,6 +316,9 @@ pactl set-default-source <device_name>
 
 # ~/.bashrcに追加して永続化
 echo "pactl set-default-source <device_name>" >> ~/.bashrc
+
+# またはDiaROS用に環境変数を設定
+export AUDIO_DEVICE_INDEX=<device_number>
 ```
 
 ### 6.3 ALSA関連のエラーメッセージを抑制
@@ -347,6 +373,19 @@ DiaROS/
 - **言語生成**: rinna/japanese-gpt2-smallによる自然な応答生成
 - **音声合成**: VOICEVOXによる高品質な日本語音声
 - 最適なパフォーマンスのためGPU推奨（CUDA対応）
+
+### 7.4 音声デバイス管理
+DiaROSには音声デバイスを管理するツールが含まれています：
+- **scripts/set_default_mic.py**: インタラクティブなデバイス設定ツール
+  - 利用可能な音声入力デバイスを一覧表示
+  - デバイスの機能をテスト
+  - デバイス設定を保存
+  - 事前設定済みデバイスで起動するスクリプトを作成
+- **scripts/test_audio_simple.py**: 簡易音声テストスクリプト
+  - PyAudioのデバイス検出を確認
+  - リアルタイムで音声レベルを表示
+- **自動デバイス検出**: Docker環境ではPulseAudioデバイスを優先
+- **環境変数**: `AUDIO_DEVICE_INDEX`でデバイスを指定可能
 
 
 ## 8. ライセンスと謝辞

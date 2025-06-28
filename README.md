@@ -203,8 +203,16 @@ source ./install/local_setup.bash
 # If using VOICEVOX, start it beforehand
 # (In separate terminal: ./voicevox_engine/run)
 
+# (Optional) Configure and test audio device
+cd ~/DiaROS
+python3 scripts/set_default_mic.py
+# Or run simple audio test
+python3 scripts/test_audio_simple.py
+
 # Launch spoken dialog system
 ros2 launch diaros_package sdsmod.launch.py
+# Or use the configured launch script (if device was set)
+/path/to/config/launch_diaros_with_mic.sh
 ```
 
 ### 4.2 Stop the System
@@ -284,6 +292,21 @@ pactl list short sinks
 ```
 
 ### 6.2 Fix Default Sound Device
+
+#### Automatic Configuration (Recommended)
+```bash
+# Use the audio device configuration script
+cd ~/DiaROS
+python3 scripts/set_default_mic.py
+```
+
+This script will:
+- List all available audio input devices
+- Allow you to select and test a device
+- Save the configuration for DiaROS
+- Create a launch script with the configured device
+
+#### Manual Configuration
 ```bash
 # Check input device list
 pactl list short sources
@@ -293,6 +316,9 @@ pactl set-default-source <device_name>
 
 # Add to ~/.bashrc for persistence
 echo "pactl set-default-source <device_name>" >> ~/.bashrc
+
+# Or set environment variable for DiaROS
+export AUDIO_DEVICE_INDEX=<device_number>
 ```
 
 ### 6.3 Suppress ALSA-Related Error Messages
@@ -347,6 +373,19 @@ The system uses advanced deep learning models for speech processing:
 - **Language Generation**: rinna/japanese-gpt2-small for natural responses
 - **Speech Synthesis**: VOICEVOX for high-quality Japanese speech
 - GPU recommended for optimal performance (CUDA support available)
+
+### 7.4 Audio Device Management
+DiaROS includes tools for managing audio devices:
+- **scripts/set_default_mic.py**: Interactive device configuration tool
+  - Lists all available audio input devices
+  - Tests device functionality
+  - Saves device configuration
+  - Creates launch scripts with pre-configured devices
+- **scripts/test_audio_simple.py**: Quick audio test script
+  - Checks PyAudio device detection
+  - Shows real-time audio levels
+- **Automatic device detection**: Prefers PulseAudio devices in Docker environments
+- **Environment variable**: Use `AUDIO_DEVICE_INDEX` to specify device
 
 
 ## 8. License and Acknowledgments
