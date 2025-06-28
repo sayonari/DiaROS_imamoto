@@ -4,6 +4,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
 import numpy as np
 import sys
+import os
 
 from diaros.speechInput import stream_queue, SpeechInput
 
@@ -31,7 +32,19 @@ def runROS(node):
     rclpy.spin(node)
 
 def runSpeechInput():
-    speech_input = SpeechInput(16000, 160, 0)  # 10msチャンク
+    # 環境変数AUDIO_DEVICE_INDEXからデバイスを取得（未設定ならNone=デフォルトデバイス）
+    device_str = os.environ.get('AUDIO_DEVICE_INDEX', '')
+    device = None
+    if device_str:
+        try:
+            device = int(device_str)
+            sys.stdout.write(f"[ros2_speech_input] Using audio device index from env: {device}\n")
+        except ValueError:
+            sys.stderr.write(f"[ros2_speech_input] Invalid AUDIO_DEVICE_INDEX: {device_str}, using default\n")
+    else:
+        sys.stdout.write("[ros2_speech_input] Using default audio device (AUDIO_DEVICE_INDEX not set)\n")
+    
+    speech_input = SpeechInput(16000, 160, device)  # 10msチャンク
     try:
         while True:
             # SpeechInputは内部でマイク監視ループを持つため何もしない
