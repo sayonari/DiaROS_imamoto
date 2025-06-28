@@ -29,9 +29,14 @@ done
 echo ""
 echo "3. PyAudio環境設定..."
 
+# ALSAプラグインの確認
+if [ ! -f /usr/lib/*/alsa-lib/libasound_module_pcm_pulse.so ]; then
+    echo "⚠️  ALSAのPulseAudioプラグインが見つかりません"
+    echo "   apt-get install libasound2-plugins でインストールしてください"
+fi
+
 # PulseAudioをデフォルトのALSAデバイスとして設定
-if [ ! -f ~/.asoundrc ]; then
-    cat > ~/.asoundrc << 'EOF'
+cat > ~/.asoundrc << 'EOF'
 pcm.!default {
     type pulse
 }
@@ -39,9 +44,19 @@ ctl.!default {
     type pulse
 }
 EOF
-    echo "✅ ALSAをPulseAudioにリダイレクトする設定を作成しました"
-else
-    echo "ℹ️  .asoundrcは既に存在します"
+echo "✅ ALSAをPulseAudioにリダイレクトする設定を作成しました"
+
+# システム全体の設定も更新
+if [ -w /etc/asound.conf ]; then
+    cat > /etc/asound.conf << 'EOF'
+pcm.!default {
+    type pulse
+}
+ctl.!default {
+    type pulse
+}
+EOF
+    echo "✅ システム全体のALSA設定も更新しました"
 fi
 
 # 環境変数の設定
