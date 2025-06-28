@@ -1,433 +1,433 @@
 # DiaROS
-**[日本語バージョンはこちら](README_jp.md)**
+**[English ver is HERE](README_en.md)**
 
 ## Author
-Ryota Nishimura (Tokushima University)  
+西村良太 徳島大学  
 nishimura@is.tokushima-u.ac.jp
 
 ## Developer
-- Ryota Nishimura
-- Takahiro Mori https://bitbucket.org/takahiro_mori_win/
+- 西村 良太 (Ryota Nishimura)
+- 森 貴大 (Takahiro Mori) https://bitbucket.org/takahiro_mori_win/
 
 ## Demo video
 [<img width="300" alt="youtube" src="https://user-images.githubusercontent.com/16011609/199163853-a00c3d9b-b4ea-483f-8d22-d1affb59dcd9.png">
 ](https://www.youtube.com/watch?v=2EkJCJpSpS4)
 
-## Overview
-DiaROS is a ROS2-compatible real-time spoken dialog system. While the system architecture is straightforward, it effectively demonstrates how to integrate a spoken dialog system with ROS2. The implementation wraps inter-module communication of a Python-based spoken dialog system with ROS2 messaging. This architecture enables monitoring, recording, and replaying communication content through ROS2 tools, significantly improving development and debugging efficiency.
+## 概要
+リアルタイム音声対話システムをROS2対応にさせたものです．システム自体の構成は単純で，中身も単純ですが，その分，音声対話システムのROS対応の方法が理解できると思います．基本的には，python実装された音声対話システムの各モジュール間の通信をROSでラップした構成になっています．この構成にすることで，通信内容をROSで監視することが可能となり，通信内容の確認，記録，再生が可能となるため，システム開発・デバッグの効率が格段に上がります．
 
-## Important Notes
-- This system is still under development and may contain bugs.
+## 注意事項
+- まだバグが含まれています．バグ取り段階です．
 
-## System Features
-The main branch includes deep learning-based speech recognition and natural language generation:
-- High-accuracy local speech recognition using Hugging Face Transformers
-- Local language generation using Japanese GPT-2 models
-- Natural speech synthesis with VOICEVOX
-- GPU recommended for optimal performance (CPU operation also supported)
-- Completely offline operation - no API keys required
+## システムの特徴
+メインブランチにはディープラーニングベースの音声認識と自然言語生成が含まれています：
+- Hugging Face Transformersを使用した高精度ローカル音声認識
+- 日本語GPT-2モデルを使用したローカル言語生成
+- VOICEVOXによる自然な音声合成
+- 最適なパフォーマンスのためGPU推奨（CPU動作も可能）
+- 完全オフライン動作 - APIキー不要
 
 
-# System Installation Guide
-The following sections describe the complete system installation process.
+# システムインストール方法
+以下にシステムのインストール方法を記載します．
 
-## 0. System Requirements
+## 0. システム要件
 - OS: Ubuntu 22.04 LTS
-- Python: 3.10.x (Ubuntu 22.04 default)
+- Python: 3.10.x（Ubuntu 22.04のデフォルト）
 - ROS2: Humble Hawksbill
 
 
-## 1. Install ROS2 Humble
-Follow the official installation guide: https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html
+## 1. ROS2 Humble をインストールする
+https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debians.html
 
-### 1.1 Basic Installation
+### 1.1 基本インストール
 ```bash
-# Configure locale
+# ロケール設定
 sudo locale-gen en_US en_US.UTF-8
 sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-# Add ROS2 repository
+# ROS2リポジトリの追加
 sudo apt update && sudo apt install curl -y
 sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
 
-# Install ROS2 Humble
+# ROS2 Humbleインストール
 sudo apt update
 sudo apt upgrade -y
 sudo apt install ros-humble-desktop -y
 sudo apt install ros-dev-tools -y
 
-# Add environment setup to .bashrc
+# 環境設定を.bashrcに追加
 echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### 1.2 (Optional) Turtlesim Test
+### 1.2（オプション）Turtlesim でのテスト
 ```bash
-# Run in separate terminals
-# Terminal 1:
+# 別々のターミナルで実行
+# ターミナル1:
 ros2 run turtlesim turtlesim_node
 
-# Terminal 2:
+# ターミナル2:
 ros2 run turtlesim turtle_teleop_key
 ```
 
 
-## 2. Install Dependencies
+## 2. 依存パッケージのインストール
 
-### 2.1 System Packages
+### 2.1 システムパッケージ
 ```bash
-# Development tools
+# 開発ツール
 sudo apt update
 sudo apt install -y git gcc g++ make cmake build-essential
 
-# Python-related packages
+# Python関連
 sudo apt install -y python3-pip python3-dev python3-venv
 sudo apt install -y python-is-python3
 
-# Audio-related packages
+# オーディオ関連
 sudo apt install -y portaudio19-dev libportaudio2
 sudo apt install -y libsndfile1-dev
 
-# Additional dependencies
+# その他の依存関係
 sudo apt install -y libcairo2-dev libgirepository1.0-dev
 sudo apt install -y libxt-dev libssl-dev libffi-dev
 sudo apt install -y zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev
 sudo apt install -y python3-tk tk-dev
 ```
 
-### 2.2 Create Python Virtual Environment (Recommended)
+### 2.2 Python仮想環境の作成（推奨）
 ```bash
-# Create virtual environment in project directory
+# プロジェクトディレクトリで実行
 python3 -m venv venv
 source venv/bin/activate
 
-# Upgrade pip and tools
+# pipのアップグレード
 pip install --upgrade pip setuptools wheel
 ```
 
 
-## 3. Install Spoken Dialog System
+## 3. 音声対話システムインストール
 
-### 3.1 Environment Configuration
-Add ROS2 environment to `~/.bashrc`:
+### 3.1 環境設定
+`~/.bashrc` にROS2環境を追加:
 ```bash
-# ROS2 environment
+# ROS2環境
 source /opt/ros/humble/setup.bash
 ```
 
-### 3.2 Install Python Packages
+### 3.2 Pythonパッケージのインストール
 
 ```bash
-# Deep learning frameworks (for local speech recognition and language generation)
+# ディープラーニングフレームワーク（ローカル音声認識・言語生成用）
 pip install torch transformers
 
-# Audio processing libraries
+# 音声処理関連
 pip install numpy scipy matplotlib
 pip install pyaudio sounddevice
-pip install aubio  # or: pip install git+https://github.com/aubio/aubio/
+pip install aubio  # または: pip install git+https://github.com/aubio/aubio/
 
-# Speech synthesis libraries
+# 音声合成関連
 pip install gtts playsound pydub
 
-# Additional utilities
+# その他のユーティリティ
 pip install requests pyworld
 
-# ROS2-related packages (for GUI)
+# ROS2関連（GUI用）
 pip install PyQt5==5.15.* PySide2 pydot
 
-# Optional: Google Cloud Speech API (if using cloud-based recognition)
+# オプション：Google Cloud Speech API（クラウドベース認識を使用する場合）
 # pip install google-cloud-speech
 ```
 
-### 3.3 Install VOICEVOX (Japanese Speech Synthesis)
+### 3.3 VOICEVOX（日本語音声合成）のインストール
 
-VOICEVOX is a high-quality Japanese speech synthesis engine.
+VOICEVOXは高品質な日本語音声合成エンジンです．
 
-1. Download VOICEVOX engine
+1. VOICEVOXエンジンのダウンロード
 ```bash
-# Check latest version: https://github.com/VOICEVOX/voicevox_engine/releases
+# 最新版を確認: https://github.com/VOICEVOX/voicevox_engine/releases
 wget https://github.com/VOICEVOX/voicevox_engine/releases/download/0.14.1/voicevox_engine-linux-cpu-0.14.1.7z
 7z x voicevox_engine-linux-cpu-0.14.1.7z
 ```
 
-2. Start VOICEVOX
+2. VOICEVOXの起動
 ```bash
 cd voicevox_engine-linux-cpu-0.14.1
 ./run
-# Runs on http://localhost:50021 by default
+# デフォルトでhttp://localhost:50021で起動
 ```
 
-3. Install Python client
+3. Python用クライアントのインストール
 ```bash
 pip install voicevox-client
 ```
 
-### 3.4 Install Spoken Dialog System Modules
-Execute the following in the `DiaROS/DiaROS_py` directory:
+### 3.4 音声対話システムモジュールのインストール
+`DiaROS/DiaROS_py`ディレクトリで以下を実行:
 
 ```bash
 cd ~/DiaROS/DiaROS_py
 pip install -e .
 ```
 
-### 3.5 Build ROS Packages
+### 3.5 ROSパッケージのビルド
 
 ```bash
-# Install colcon
+# colconのインストール
 sudo apt install python3-colcon-common-extensions
 
-# Navigate to workspace
+# ワークスペースに移動
 cd ~/DiaROS/DiaROS_ros
 
-# Build interfaces (message types)
+# インターフェース（メッセージ型）のビルド
 colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
 source ./install/local_setup.bash
 
-# Build DiaROS package
+# DiaROSパッケージのビルド
 colcon build --packages-select diaros_package
 source ./install/local_setup.bash
 ```
 
 
-## 4. Execution Instructions
+## 4. 実行手順
 
-### 4.1 Start the Spoken Dialog System
+### 4.1 音声対話システムの起動
 ```bash
-# In a new terminal
+# 新しいターミナルで
 cd ~/DiaROS/DiaROS_ros
 source /opt/ros/humble/setup.bash
 source ./install/local_setup.bash
 
-# If using VOICEVOX, start it beforehand
-# (In separate terminal: ./voicevox_engine/run)
+# VOICEVOXを使用する場合は事前に起動しておく
+# （別ターミナルで ./voicevox_engine/run を実行）
 
-# (Optional) Configure and test audio device
+# （オプション）音声デバイスの設定とテスト
 cd ~/DiaROS
 python3 scripts/set_default_mic.py
-# Or run simple audio test
+# または簡易音声テスト
 python3 scripts/test_audio_simple.py
 
-# Launch spoken dialog system
+# 音声対話システムの実行
 ros2 launch diaros_package sdsmod.launch.py
-# Or use the configured launch script (if device was set)
+# または設定済みスクリプトを使用（デバイスを設定した場合）
 /path/to/config/launch_diaros_with_mic.sh
 ```
 
-### 4.2 Stop the System
-Press `Ctrl+C` to terminate the system.
+### 4.2 システムの停止
+`Ctrl+C` で終了します．
 
 
-## 5. Utilizing ROS2 Monitoring Tools
+## 5. ROS2モニタリングツールの活用
 
-### 5.1 rqt_graph - Visualize Nodes and Topics
+### 5.1 rqt_graph - ノードとトピックの可視化
 ```bash
-# Visualize system communication structure
+# システム全体の通信構造を視覚的に確認
 ros2 run rqt_graph rqt_graph
 ```
 
-### 5.2 ros2 topic - Topic Monitoring
+### 5.2 ros2 topic - トピックの監視
 ```bash
-# List available topics
+# 利用可能なトピック一覧
 ros2 topic list
 
-# Monitor specific topic content in real-time
+# 特定トピックの内容をリアルタイム表示
 ros2 topic echo /speech_recognition
 ros2 topic echo /dialogue_response
 ros2 topic echo /speech_synthesis
 
-# Check topic frequency
+# トピックの周波数確認
 ros2 topic hz /audio_input
 ```
 
-### 5.3 ros2 bag - Data Recording and Playback
+### 5.3 ros2 bag - データの記録と再生
 ```bash
-# Record all topics
+# すべてのトピックを記録
 ros2 bag record -a
 
-# Record specific topics only
+# 特定のトピックのみ記録
 ros2 bag record /speech_recognition /dialogue_response
 
-# View recorded data information
+# 記録したデータの情報確認
 ros2 bag info <bag_file>
 
-# Playback recorded data
+# 記録したデータの再生
 ros2 bag play <bag_file>
 ```
 
-### 5.4 rqt_plot - Data Visualization
+### 5.4 rqt_plot - データの可視化
 ```bash
-# Display numerical data such as audio levels in graphs
+# 音声レベルなどの数値データをグラフ表示
 ros2 run rqt_plot rqt_plot
 ```
 
-### 5.5 Other Useful Commands
+### 5.5 その他の便利なコマンド
 ```bash
-# List nodes
+# ノード一覧
 ros2 node list
 
-# Node information
+# ノード情報
 ros2 node info /speech_recognition_node
 
-# List services
+# サービス一覧
 ros2 service list
 
-# List parameters
+# パラメータ一覧
 ros2 param list
 ```
 
 
-## 6. Troubleshooting
+## 6. トラブルシューティング
 
-### 6.1 Sound Device (USB Headset) Not Recognized
+### 6.1 サウンドデバイス（USBヘッドセット）が認識されない場合
 ```bash
-# Update kernel modules
+# カーネルモジュールの更新
 sudo apt update
 sudo apt upgrade linux-generic
 
-# After reboot, check devices
+# 再起動後、デバイスを確認
 pactl list short sources
 pactl list short sinks
 ```
 
-### 6.2 Fix Default Sound Device
+### 6.2 デフォルトサウンドデバイスの固定
 
-#### Automatic Configuration (Recommended)
+#### 自動設定（推奨）
 ```bash
-# Use the audio device configuration script
+# 音声デバイス設定スクリプトを使用
 cd ~/DiaROS
 python3 scripts/set_default_mic.py
 ```
 
-This script will:
-- List all available audio input devices
-- Allow you to select and test a device
-- Save the configuration for DiaROS
-- Create a launch script with the configured device
+このスクリプトは以下を実行します：
+- 利用可能な音声入力デバイスを一覧表示
+- デバイスを選択してテスト可能
+- DiaROS用の設定を保存
+- 設定済みデバイスで起動するスクリプトを作成
 
-#### Manual Configuration
+#### 手動設定
 ```bash
-# Check input device list
+# 入力デバイス一覧確認
 pactl list short sources
 
-# Set default device
+# デフォルトデバイスの設定
 pactl set-default-source <device_name>
 
-# Add to ~/.bashrc for persistence
+# ~/.bashrcに追加して永続化
 echo "pactl set-default-source <device_name>" >> ~/.bashrc
 
-# Or set environment variable for DiaROS
+# またはDiaROS用に環境変数を設定
 export AUDIO_DEVICE_INDEX=<device_number>
 ```
 
-### 6.3 Suppress ALSA-Related Error Messages
-For errors like "Unknown PCM cards":
+### 6.3 ALSA関連のエラーメッセージを抑制
+Unknown PCM cardsなどのエラーが表示される場合：
 ```bash
-# Comment out unnecessary settings in /usr/share/alsa/alsa.conf
+# /usr/share/alsa/alsa.conf の不要な設定をコメントアウト
 sudo nano /usr/share/alsa/alsa.conf
-# Comment out lines like cards.pcm.rear, cards.pcm.center_lfe, etc.
+# cards.pcm.rear, cards.pcm.center_lfe などの行をコメントアウト
 ```
 
-### 6.4 Fix Python GTTS Errors
+### 6.4 Python GTTSでのエラー対処
 ```bash
-# For "No module named 'gi'" error
+# No module named 'gi' エラーの場合
 sudo apt install libcairo2-dev libgirepository1.0-dev
 pip install pycairo PyGObject
 ```
 
-### 6.5 ROS2-Related Issues
+### 6.5 ROS2関連のトラブル
 ```bash
-# Check environment variables
+# 環境変数の確認
 printenv | grep ROS
 
-# Clean rebuild workspace
+# ワークスペースのクリーンビルド
 cd ~/DiaROS/DiaROS_ros
 rm -rf build/ install/ log/
 colcon build
 ```
 
 
-## 7. Developer Information
+## 7. 開発者向け情報
 
-### 7.1 Project Structure
+### 7.1 プロジェクト構造
 ```
 DiaROS/
-├── DiaROS_py/          # Python spoken dialog system modules
-├── DiaROS_ros/         # ROS2 packages
-│   ├── interfaces/     # Message type definitions
-│   └── diaros_package/ # Main package
-└── docs/               # Documentation
+├── DiaROS_py/          # Python音声対話システムモジュール
+├── DiaROS_ros/         # ROS2パッケージ
+│   ├── interfaces/     # メッセージ型定義
+│   └── diaros_package/ # メインパッケージ
+└── docs/               # ドキュメント
 ```
 
-### 7.2 Main ROS Topics
-- `/audio_input`: Audio input from microphone
-- `/speech_recognition`: Speech recognition results
-- `/dialogue_response`: Dialog system responses
-- `/speech_synthesis`: Speech synthesis results
-- `/audio_output`: Audio output to speakers
+### 7.2 主要なROSトピック
+- `/audio_input`: マイクからの音声入力
+- `/speech_recognition`: 音声認識結果
+- `/dialogue_response`: 対話システムの応答
+- `/speech_synthesis`: 音声合成結果
+- `/audio_output`: スピーカーへの音声出力
 
-### 7.3 Deep Learning Models
-The system uses advanced deep learning models for speech processing:
-- **Speech Recognition**: Hugging Face japanese-HuBERT-base-VADLess-ASR model
-- **Language Generation**: rinna/japanese-gpt2-small for natural responses
-- **Speech Synthesis**: VOICEVOX for high-quality Japanese speech
-- GPU recommended for optimal performance (CUDA support available)
+### 7.3 ディープラーニングモデル
+システムは高度な音声処理のためにディープラーニングモデルを使用しています：
+- **音声認識**: Hugging Face japanese-HuBERT-base-VADLess-ASRモデル
+- **言語生成**: rinna/japanese-gpt2-smallによる自然な応答生成
+- **音声合成**: VOICEVOXによる高品質な日本語音声
+- 最適なパフォーマンスのためGPU推奨（CUDA対応）
 
-### 7.4 Audio Device Management
-DiaROS includes tools for managing audio devices:
-- **scripts/set_default_mic.py**: Interactive device configuration tool
-  - Lists all available audio input devices
-  - Tests device functionality
-  - Saves device configuration
-  - Creates launch scripts with pre-configured devices
-- **scripts/test_audio_simple.py**: Quick audio test script
-  - Checks PyAudio device detection
-  - Shows real-time audio levels
-- **Automatic device detection**: Prefers PulseAudio devices in Docker environments
-- **Environment variable**: Use `AUDIO_DEVICE_INDEX` to specify device
+### 7.4 音声デバイス管理
+DiaROSには音声デバイスを管理するツールが含まれています：
+- **scripts/set_default_mic.py**: インタラクティブなデバイス設定ツール
+  - 利用可能な音声入力デバイスを一覧表示
+  - デバイスの機能をテスト
+  - デバイス設定を保存
+  - 事前設定済みデバイスで起動するスクリプトを作成
+- **scripts/test_audio_simple.py**: 簡易音声テストスクリプト
+  - PyAudioのデバイス検出を確認
+  - リアルタイムで音声レベルを表示
+- **自動デバイス検出**: Docker環境ではPulseAudioデバイスを優先
+- **環境変数**: `AUDIO_DEVICE_INDEX`でデバイスを指定可能
 
 
-## 8. License and Acknowledgments
-This system is developed for research purposes.
-Please comply with the terms of service of each API used.
+## 8. ライセンスと謝辞
+本システムは研究目的で開発されています．
+各種APIの利用規約に従ってご使用ください．
 
-### Major Libraries and APIs Used
+### 使用している主要なライブラリ・API
 - ROS2 Humble
-- Hugging Face Transformers (local speech recognition and language generation)
-- VOICEVOX (Japanese speech synthesis)
+- Hugging Face Transformers（ローカル音声認識・言語生成）
+- VOICEVOX（日本語音声合成）
 - PyAudio
-- Various other open-source libraries
+- その他多数のオープンソースライブラリ
 
 
-## 9. Appendix: Using External APIs (Optional)
+## 9. 付録：外部APIの使用（オプション）
 
-While DiaROS now runs completely locally without external APIs, you can optionally configure it to use cloud-based services for potentially higher accuracy:
+DiaROSは現在、外部APIなしで完全にローカルで動作しますが、より高い精度を求める場合はクラウドベースのサービスを使用することも可能です：
 
-### 9.1 Google Speech-to-Text API (Speech Recognition)
-1. Create a project in Google Cloud Console
-2. Enable Speech-to-Text API
-3. Create service account key (JSON format)
-4. Detailed instructions: https://cloud.google.com/speech-to-text/docs/before-you-begin
-5. Set environment variable:
+### 9.1 Google Speech-to-Text API（音声認識）
+1. Google Cloud Consoleでプロジェクトを作成
+2. Speech-to-Text APIを有効化
+3. サービスアカウントキーを作成（JSON形式）
+4. 詳細手順: https://cloud.google.com/speech-to-text/docs/before-you-begin?hl=ja
+5. 環境変数を設定:
    ```bash
    export GOOGLE_APPLICATION_CREDENTIALS="$HOME/secret/google_stt_key.json"
    ```
 
-### 9.2 OpenAI API (Response Generation)
-1. Sign up at https://platform.openai.com/
-2. Create an API key
-3. Set environment variable:
+### 9.2 OpenAI API（応答生成）
+1. https://platform.openai.com/ でアカウント作成
+2. APIキーを作成
+3. 環境変数を設定:
    ```bash
    export OPENAI_API_KEY="your-api-key-here"
    ```
-4. Modify `naturalLanguageGeneration.py` to set `self.use_local_model = False`
+4. `naturalLanguageGeneration.py`で`self.use_local_model = False`に変更
 
-### 9.3 A3RT Talk API (Alternative Response Generation)
-1. Obtain API key: https://a3rt.recruit.co.jp/product/talkAPI/
-2. Save API key to a text file
-3. Configure environment variable:
+### 9.3 A3RT Talk API（代替応答生成）
+1. APIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/
+2. APIキーをテキストファイルに保存
+3. 環境変数を設定:
    ```bash
    export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
    ```
-   Note: Current implementation uses OpenAI API or local models instead
+   注：現在の実装ではOpenAI APIまたはローカルモデルが使用されています
