@@ -2,8 +2,8 @@
 **[English ver is HERE](README_en.md)**
 
 ## Author
-西村良太 徳島大学  
-nishimura@is.tokushima-u.ac.jp
+西村良太 豊橋技術科学大学  
+nishimura.ryota.tz@tut.jp
 
 ## Developer
 - 西村 良太 (Ryota Nishimura)

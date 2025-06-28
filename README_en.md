@@ -2,8 +2,8 @@
 **[日本語バージョンはこちら](README.md)**
 
 ## Author
-Ryota Nishimura (Tokushima University)  
-nishimura@is.tokushima-u.ac.jp
+Ryota Nishimura (Toyohashi University of Technology)  
+nishimura.ryota.tz@tut.jp
 
 ## Developer
 - Ryota Nishimura
