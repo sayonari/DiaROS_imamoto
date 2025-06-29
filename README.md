@@ -410,7 +410,7 @@ Apple Silicon Mac（M1/M2/M3）では、Metal Performance Shaders（MPS）を使
 
 **詳細なセットアップガイド**: 📖 [docs/macos_native_setup.md](docs/macos_native_setup.md) を参照してください。
 
-### 9.2 クイックセットアップ
+### 9.2 クイックセットアップ（Pixiを使用）
 
 #### 必要なツールのインストール
 ```bash
@@ -423,40 +423,47 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-#### Python環境のセットアップ（ROS2なしで動作）
+#### Pixiを使ったROS2環境のセットアップ（推奨）
 ```bash
-# 必要なツールのインストール
-brew install python@3.10 cmake pkg-config portaudio
+# Pixiのインストール
+curl -fsSL https://pixi.sh/install.sh | bash
+source ~/.zshrc  # または ~/.bashrc
 
-# 注意: macOSでのROS2は現在、ソースビルドが必要です
-# DiaROSはROS2なしでも基本機能が動作します
+# ROS2プロジェクトの作成
+mkdir -p ~/DiaROS_pixi && cd ~/DiaROS_pixi
+pixi init diaros_workspace -c robostack-humble -c conda-forge
+cd diaros_workspace
 
-# Python仮想環境の作成
-mkdir -p ~/DiaROS_workspace
-cd ~/DiaROS_workspace
-python3.10 -m venv diaros_env
-source diaros_env/bin/activate
+# ROS2 Humbleのインストール
+pixi add ros-humble-desktop colcon-common-extensions python=3.10
 
-# PyTorch（MPS対応版）のインストール
-pip install torch torchvision torchaudio
+# DiaROSのクローン
+cd ~/DiaROS_pixi
+git clone https://github.com/sayonari/DiaROS_imamoto.git
+
+# Pixi環境で依存パッケージをインストール
+cd diaros_workspace
+pixi shell
+pip install torch torchvision torchaudio transformers numpy==1.24.3
+pip install pyaudio sounddevice aubio librosa scipy
 
 # MPS確認
 python -c "import torch; print(f'MPS available: {torch.backends.mps.is_available()}')"
 ```
 
-#### DiaROSのセットアップと起動
+**詳細**: 📖 [docs/macos_pixi_ros2_setup.md](docs/macos_pixi_ros2_setup.md)
+
+#### 代替方法：ROS2なしでの実行
+ROS2なしでも基本機能は動作します。詳細は [docs/macos_quick_start.md](docs/macos_quick_start.md) を参照。
+
+#### DiaROSのビルドと起動（Pixi環境）
 ```bash
-# リポジトリのクローン
-git clone https://github.com/sayonari/DiaROS_imamoto.git DiaROS
-cd DiaROS
+# Pixi環境に入る
+cd ~/DiaROS_pixi/diaros_workspace
+pixi shell
 
-# 依存パッケージのインストール
-pip install transformers numpy==1.24.3 scipy librosa soundfile
-pip install pyaudio sounddevice webrtcvad aubio pyworld
-pip install huggingface-hub requests matplotlib
-
-# ROS2ワークスペースのビルド
-cd DiaROS_ros
+# DiaROSのビルド
+cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
 source ./install/local_setup.bash
 colcon build --packages-select diaros_package
@@ -466,12 +473,12 @@ source ./install/local_setup.bash
 cd ../DiaROS_py
 pip install -e .
 
-# VOICEVOXのセットアップ（別ターミナルで起動）
+# VOICEVOXの起動（別ターミナル）
 # https://github.com/VOICEVOX/voicevox_engine/releases からダウンロード
 
 # DiaROSの起動
-cd ~/DiaROS_workspace/DiaROS
 export DIAROS_DEVICE=mps  # MPSを使用
+cd ~/DiaROS_pixi/DiaROS_imamoto
 ros2 launch diaros_package sdsmod.launch.py
 ```
 
