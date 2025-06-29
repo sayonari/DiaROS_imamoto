@@ -270,14 +270,14 @@ class AutomaticSpeechRecognition:
         # デバイス選択（MPS/CUDA/CPU自動選択）
         try:
             from . import device_utils
-            self.model, device = device_utils.move_model_to_device(self.model, verbose=True)
+            self.model, self.device = device_utils.move_model_to_device(self.model, verbose=True)
         except:
             # フォールバック（device_utilsが使えない場合）
             if USE_GPU and torch.cuda.is_available():
-                device = torch.device("cuda")
-                self.model.to(device)
+                self.device = torch.device("cuda")
+                self.model.to(self.device)
             else:
-                device = torch.device("cpu")
+                self.device = torch.device("cpu")
         sys.stdout.write('ASR model loaded.\n')
         sys.stdout.flush()
 
@@ -305,9 +305,9 @@ class AutomaticSpeechRecognition:
                         mic_input = mic_input[-INPUT_LEN:]
                     array = mic_input.astype(np.float32)
                     inputs = self.processor(array, sampling_rate=SAMPLE_RATE, return_tensors="pt", padding=True)
-                    if USE_GPU and torch.cuda.is_available():
-                        inputs = {k: v.to(device) for k, v in inputs.items()}
-                        self.model = self.model.to(device)
+                    # デバイスに入力を移動
+                    if self.device.type != 'cpu':
+                        inputs = {k: v.to(self.device) for k, v in inputs.items()}
                     with torch.no_grad():
                         logits = self.model(**inputs).logits
                     predicted_ids = torch.argmax(logits, dim=-1)
