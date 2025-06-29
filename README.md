@@ -423,16 +423,13 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-#### ROS2とPython環境のセットアップ
+#### Python環境のセットアップ（ROS2なしで動作）
 ```bash
-# ROS2 Humbleのインストール
-brew install python@3.10 cmake pkg-config
-brew tap ros2/ros2
-brew install ros-humble-desktop
+# 必要なツールのインストール
+brew install python@3.10 cmake pkg-config portaudio
 
-# 環境設定
-echo 'source /opt/homebrew/opt/ros/humble/setup.zsh' >> ~/.zshrc
-source ~/.zshrc
+# 注意: macOSでのROS2は現在、ソースビルドが必要です
+# DiaROSはROS2なしでも基本機能が動作します
 
 # Python仮想環境の作成
 mkdir -p ~/DiaROS_workspace
