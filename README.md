@@ -408,50 +408,90 @@ DiaROSには音声デバイスを管理するツールが含まれています�
 ### 9.1 概要
 Apple Silicon Mac（M1/M2/M3）では、Metal Performance Shaders（MPS）を使用してGPUアクセラレーションが可能です。Docker環境ではMPSが使用できないため、最高のパフォーマンスを得るにはネイティブ実行を推奨します。
 
-### 9.2 macOSでのROS2インストール
-```bash
-# Homebrewのインストール（まだの場合）
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+**詳細なセットアップガイド**: 📖 [docs/macos_native_setup.md](docs/macos_native_setup.md) を参照してください。
 
+### 9.2 クイックセットアップ
+
+#### 必要なツールのインストール
+```bash
+# Xcodeコマンドラインツール
+xcode-select --install
+
+# Homebrew（まだの場合）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+#### ROS2とPython環境のセットアップ
+```bash
 # ROS2 Humbleのインストール
+brew install python@3.10 cmake pkg-config
 brew tap ros2/ros2
 brew install ros-humble-desktop
 
 # 環境設定
-echo "source /opt/homebrew/opt/ros/humble/setup.zsh" >> ~/.zshrc
+echo 'source /opt/homebrew/opt/ros/humble/setup.zsh' >> ~/.zshrc
 source ~/.zshrc
-```
 
-### 9.3 Python環境の準備（Apple Silicon最適化）
-```bash
-# Python 3.10環境を作成
-python3 -m venv ~/diaros_venv
-source ~/diaros_venv/bin/activate
+# Python仮想環境の作成
+mkdir -p ~/DiaROS_workspace
+cd ~/DiaROS_workspace
+python3.10 -m venv diaros_env
+source diaros_env/bin/activate
 
-# PyTorchのインストール（MPS対応版）
+# PyTorch（MPS対応版）のインストール
 pip install torch torchvision torchaudio
 
-# その他の依存関係
-pip install transformers numpy==1.24.3 sounddevice pyaudio
-pip install aubio librosa scipy matplotlib
-pip install requests pyworld huggingface-hub
+# MPS確認
+python -c "import torch; print(f'MPS available: {torch.backends.mps.is_available()}')"
 ```
 
-### 9.4 MPSの有効化確認
+#### DiaROSのセットアップと起動
 ```bash
-python3 -c "import torch; print(f'MPS available: {torch.backends.mps.is_available()}')"
+# リポジトリのクローン
+git clone https://github.com/sayonari/DiaROS_imamoto.git DiaROS
+cd DiaROS
+
+# 依存パッケージのインストール
+pip install transformers numpy==1.24.3 scipy librosa soundfile
+pip install pyaudio sounddevice webrtcvad aubio pyworld
+pip install huggingface-hub requests matplotlib
+
+# ROS2ワークスペースのビルド
+cd DiaROS_ros
+colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
+source ./install/local_setup.bash
+colcon build --packages-select diaros_package
+source ./install/local_setup.bash
+
+# Pythonモジュールのインストール
+cd ../DiaROS_py
+pip install -e .
+
+# VOICEVOXのセットアップ（別ターミナルで起動）
+# https://github.com/VOICEVOX/voicevox_engine/releases からダウンロード
+
+# DiaROSの起動
+cd ~/DiaROS_workspace/DiaROS
+export DIAROS_DEVICE=mps  # MPSを使用
+ros2 launch diaros_package sdsmod.launch.py
 ```
 
-### 9.5 パフォーマンス比較
-| 環境 | デバイス | 音声認識速度 | 言語生成速度 |
-|------|----------|-------------|-------------|
-| Docker | CPU (8コア) | ~500ms | ~1000ms |
-| Native | MPS (GPU) | ~50ms | ~100ms |
-| Native | CPU | ~300ms | ~800ms |
+### 9.3 パフォーマンス比較
 
-### 9.6 環境変数の設定
+| 環境 | デバイス | 音声認識 | 言語生成 | ターンテイキング |
+|------|----------|---------|---------|---------------|
+| Docker | CPU (8コア) | ~500ms | ~1000ms | ~200ms |
+| Native | MPS (GPU) | ~50ms | ~100ms | ~20ms |
+| Native | CPU | ~300ms | ~800ms | ~150ms |
+
+**結果**: MPSを使用することで、**最大10倍の高速化**を実現！
+
+### 9.4 環境変数とデバイス選択
+
 ```bash
-# MPSを優先的に使用
+# MPSを優先的に使用（推奨）
 export DIAROS_DEVICE=mps
 
 # CPUに固定する場合
@@ -461,14 +501,41 @@ export DIAROS_DEVICE=cpu
 unset DIAROS_DEVICE
 ```
 
-### 9.7 デバイス自動選択の仕組み
-DiaROSは以下の優先順位でデバイスを選択します：
+デバイスの優先順位：
 1. 環境変数`DIAROS_DEVICE`の指定
 2. MPS（Apple Silicon GPU）
 3. CUDA（NVIDIA GPU）
 4. CPU
 
-各モジュールは`device_utils.py`を使用して最適なデバイスを自動選択します。
+### 9.5 トラブルシューティング
+
+#### PyAudioエラー
+```bash
+brew reinstall portaudio
+pip uninstall pyaudio && pip install pyaudio
+```
+
+#### MPSエラー
+```bash
+# フォールバックを有効化
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+```
+
+#### マイク権限
+システム設定 → プライバシーとセキュリティ → マイク → ターミナルを許可
+
+### 9.6 必要なモデルへのアクセス
+
+HuggingFaceの制限付きモデルを使用するため：
+1. https://huggingface.co/ でアカウント作成
+2. 以下のモデルページでライセンスに同意：
+   - [japanese-HuBERT-base-VADLess-ASR-RSm](https://huggingface.co/SiRoZaRuPa/japanese-HuBERT-base-VADLess-ASR-RSm)
+3. アクセストークンを設定：
+   ```bash
+   huggingface-cli login
+   # または
+   export HF_TOKEN=your_token_here
+   ```
 
 ## 10. 付録：外部APIの使用（オプション）
 
