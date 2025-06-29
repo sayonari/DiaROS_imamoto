@@ -488,9 +488,6 @@ pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 
 **詳細**: 📖 [docs/macos_pixi_ros2_setup.md](docs/macos_pixi_ros2_setup.md)
 
-#### 代替方法：ROS2なしでの実行
-ROS2なしでも基本機能は動作します。詳細は [docs/macos_quick_start.md](docs/macos_quick_start.md) を参照。
-
 #### DiaROSのビルドと起動（Pixi環境）
 
 ##### 5. ROS2パッケージのビルド
@@ -716,3 +713,11 @@ DiaROSは現在、外部APIなしで完全にローカルで動作しますが�
    export A3RT_APIKEY="$HOME/secret/a3rt_api_key.txt"
    ```
    注：現在の実装ではOpenAI APIまたはローカルモデルが使用されています
+
+### 10.4 ROS2なしでの実行（実験的）
+ROS2を使わずにDiaROSの基本機能を試すこともできます。ただし、この方法では一部の機能が制限されます：
+- モジュール間の通信監視ができない
+- システムの記録・再生機能が使えない
+- デバッグが困難
+
+詳細は [docs/macos_quick_start.md](docs/macos_quick_start.md) を参照してください。
