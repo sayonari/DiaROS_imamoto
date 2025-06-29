@@ -42,13 +42,50 @@ if [ -f "/workspace/config/audio_device.conf" ]; then
 fi
 
 echo ""
+echo -e "${GREEN}🎯 初回ビルドの確認${NC}"
+echo "=================================="
+
+# 初回ビルドが必要か確認
+if [ ! -d "/workspace/DiaROS_ros/install" ]; then
+    echo -e "${YELLOW}⚠️  初回ビルドが必要です。ビルドを開始します...${NC}"
+    cd /workspace/DiaROS_ros
+    colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
+    source ./install/local_setup.bash
+    colcon build --packages-select diaros_package
+    source ./install/local_setup.bash
+    echo -e "${GREEN}✅ ビルドが完了しました${NC}"
+    
+    # ビルド後は必ずPythonモジュールの再インストールが必要
+    FORCE_REINSTALL=true
+else
+    echo -e "${GREEN}✅ ビルド済みです${NC}"
+    FORCE_REINSTALL=false
+fi
+
+# Pythonモジュールのインストール確認
+echo -e "${YELLOW}🔍 Pythonモジュールの確認...${NC}"
+if [ "$FORCE_REINSTALL" = true ] || ! python3 -c "import diaros" 2>/dev/null; then
+    echo -e "${YELLOW}⚠️  DiaROSモジュールのインストールが必要です...${NC}"
+    cd /workspace/DiaROS_py
+    python3 -m pip install . --force-reinstall
+    echo -e "${GREEN}✅ モジュールのインストールが完了しました${NC}"
+else
+    echo -e "${GREEN}✅ DiaROSモジュールは既にインストールされています${NC}"
+fi
+
+echo ""
 echo -e "${GREEN}🎯 DiaROSを起動します...${NC}"
 echo "=================================="
 
 # ROS2環境の設定
 source /opt/ros/humble/setup.bash
-source /workspace/DiaROS_ros/install/local_setup.bash
+if [ -f "/workspace/DiaROS_ros/install/local_setup.bash" ]; then
+    source /workspace/DiaROS_ros/install/local_setup.bash
+fi
+
+# ALSAエラーメッセージを抑制
+export ALSA_CARD="null"
 
 # DiaROSの起動
 cd /workspace
-ros2 launch diaros_package sdsmod.launch.py
+ros2 launch diaros_package sdsmod.launch.py 2>&1 | grep -v "ALSA lib" | grep -v "Cannot connect to server socket" | grep -v "jack server is not running"
