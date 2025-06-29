@@ -1,5 +1,12 @@
 ### speechInput.py ###
 import time
+# ALSAエラーメッセージを抑制（pyaudioをインポートする前に実行）
+try:
+    from . import suppress_alsa
+    suppress_alsa.suppress_alsa_lib_error_messages()
+except:
+    pass
+
 import pyaudio
 from six.moves import queue
 import sys
