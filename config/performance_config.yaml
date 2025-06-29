@@ -1,0 +1,33 @@
+# DiaROS パフォーマンス設定ファイル
+# Docker環境でのパフォーマンス最適化設定
+
+# 音声認識設定
+asr:
+  # バッチサイズを小さくしてレイテンシを改善
+  batch_size: 1
+  # CPUスレッド数を最適化（M1 Maxは10コア）
+  num_threads: 8
+  
+# ターンテイキング設定  
+turn_taking:
+  # 推論間隔を調整（ミリ秒）
+  inference_interval: 500  # デフォルト: 100
+  
+# 相槌生成設定
+back_channel:
+  # 推論間隔を調整（ミリ秒）
+  inference_interval: 500  # デフォルト: 100
+  
+# 自然言語生成設定
+nlg:
+  # より小さいモデルを使用
+  use_small_model: true
+  # 生成の最大長を制限
+  max_length: 50
+  
+# CPU最適化設定
+cpu_optimization:
+  # PyTorchのCPUスレッド数
+  torch_num_threads: 8
+  # OpenBLASのスレッド数
+  openblas_num_threads: 8
