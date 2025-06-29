@@ -80,6 +80,9 @@ pip install transformers huggingface-hub
 # 音声処理関連
 pip install pyaudio sounddevice librosa scipy
 pip install matplotlib requests pyyaml webrtcvad pyworld soundfile
+
+# 追加の必須パッケージ
+pip install playsound pydub PyObjC
 ```
 
 ### 6. aubioのインストール（特別な手順が必要）
@@ -198,6 +201,12 @@ export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用
 export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
 export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
 
+# 動的ライブラリパスの設定（必要な場合）
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
+
+# power_calibration.wavファイルのコピー（初回のみ）
+cp ../DiaROS_py/diaros/power_calibration.wav .
+
 # DiaROSの起動
 ros2 launch diaros_package sdsmod.launch.py
 ```
@@ -238,8 +247,31 @@ for i in range(p.get_device_count()):
 "
 ```
 
-#### 5. マイクアクセス権限
+#### 5. 動的ライブラリロードエラー
+"Library not loaded: @rpath/libinterfaces__rosidl_generator_py.dylib" エラーが出る場合：
+```bash
+# 動的ライブラリパスを設定
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
+```
+
+#### 6. マイクアクセス権限
 システム設定 → プライバシーとセキュリティ → マイク → ターミナルを許可
+
+#### 7. "No module named 'playsound'" エラー
+```bash
+# 必須パッケージをインストール
+pip install playsound pydub PyObjC
+```
+
+#### 8. "Token is required (`token=True`)" エラー
+HuggingFaceのモデルアクセスにトークンが必要です：
+```bash
+# HuggingFace CLIでログイン
+huggingface-cli login
+
+# または環境変数で設定
+export HF_TOKEN=your_token_here
+```
 
 ## 動作確認
 

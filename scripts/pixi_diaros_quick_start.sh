@@ -69,6 +69,9 @@ export ROS_PYTHON_VERSION=3
 export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
 export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
 
+# 動的ライブラリパスの設定
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
+
 # デバイス情報の表示
 echo ""
 echo "Device configuration:"
@@ -80,7 +83,26 @@ echo ""
 if [ -z "$HF_TOKEN" ]; then
     echo "⚠️  HF_TOKEN is not set. Some models may not be accessible."
     echo "   Set it with: export HF_TOKEN=your_token_here"
+    echo "   Or login with: huggingface-cli login"
 fi
+
+# power_calibration.wavファイルの確認
+if [ ! -f "power_calibration.wav" ]; then
+    echo "⚠️  power_calibration.wav not found in current directory."
+    if [ -f "../DiaROS_py/diaros/power_calibration.wav" ]; then
+        echo "   Copying from DiaROS_py..."
+        cp ../DiaROS_py/diaros/power_calibration.wav .
+    else
+        echo "   Please ensure power_calibration.wav is available."
+    fi
+fi
+
+# 必須Pythonパッケージの確認
+echo ""
+echo "Checking required Python packages..."
+python -c "import playsound" 2>/dev/null || echo "⚠️  playsound not installed. Run: pip install playsound"
+python -c "import pydub" 2>/dev/null || echo "⚠️  pydub not installed. Run: pip install pydub"
+python -c "import PyObjC" 2>/dev/null || echo "⚠️  PyObjC not installed. Run: pip install PyObjC"
 
 # DiaROSの起動
 echo "Launching DiaROS..."

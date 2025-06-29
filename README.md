@@ -478,9 +478,12 @@ export LDFLAGS="-L/opt/homebrew/lib"
 export CPPFLAGS="-I/opt/homebrew/include"
 pip install aubio --no-cache-dir
 
+# 追加の必須パッケージ
+pip install playsound pydub PyObjC
+
 # インストール確認
 python -c "import torch; print(f'MPS available: {torch.backends.mps.is_available()}')"
-pip list | grep -E "aubio|pyaudio|torch|transformers"
+pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 ```
 
 **詳細**: 📖 [docs/macos_pixi_ros2_setup.md](docs/macos_pixi_ros2_setup.md)
@@ -547,6 +550,17 @@ cd macos-x64
 ./run
 ```
 
+##### 7.5. HuggingFaceトークンの設定（必要な場合）
+一部のモデルへのアクセスにはトークンが必要です：
+```bash
+# HuggingFace CLIでログイン
+pip install huggingface-cli
+huggingface-cli login
+
+# または環境変数で設定
+export HF_TOKEN=your_token_here
+```
+
 ##### 8. DiaROSの起動
 ```bash
 # DiaROSディレクトリに移動
@@ -556,6 +570,12 @@ cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用
 export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
 export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
+
+# 動的ライブラリパスの設定（必要な場合）
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
+
+# power_calibration.wavファイルのコピー（初回のみ）
+cp ../DiaROS_py/diaros/power_calibration.wav .
 
 # DiaROSの起動
 ros2 launch diaros_package sdsmod.launch.py
@@ -640,6 +660,13 @@ export Python3_ROOT_DIR=$CONDA_PREFIX
 ```bash
 # フォールバックを有効化
 export PYTORCH_ENABLE_MPS_FALLBACK=1
+```
+
+#### 動的ライブラリロードエラー
+「Library not loaded: @rpath/libinterfaces__rosidl_generator_py.dylib」エラーが出る場合：
+```bash
+# 動的ライブラリパスを設定
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
 ```
 
 #### マイク権限

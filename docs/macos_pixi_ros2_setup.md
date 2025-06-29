@@ -105,6 +105,9 @@ pip install aubio --no-cache-dir
 # その他のパッケージ
 pip install pyaudio sounddevice webrtcvad pyworld
 pip install matplotlib requests pyyaml
+
+# 追加の必須パッケージ
+pip install playsound pydub PyObjC
 ```
 
 ### 6. DiaROS ROS2パッケージのビルド
@@ -113,14 +116,38 @@ pip install matplotlib requests pyyaml
 # Pixi環境内で実行
 cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
-# ビルド
-colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
-source ./install/local_setup.bash
+# Python環境変数の設定（CMakeがPython 3.9を見つけられるように）
+export Python3_ROOT_DIR=$CONDA_PREFIX
+export Python3_EXECUTABLE=$CONDA_PREFIX/bin/python
+export Python3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.9
+export Python3_LIBRARY=$CONDA_PREFIX/lib/libpython3.9.dylib
+export Python3_NumPy_INCLUDE_DIR=$(python -c "import numpy; print(numpy.get_include())")
+
+# interfacesパッケージのビルド
+colcon build \
+  --cmake-args \
+  -DCMAKE_C_FLAGS=-fPIC \
+  -DPython3_FIND_STRATEGY=LOCATION \
+  -DPython3_ROOT_DIR=$CONDA_PREFIX \
+  --packages-select interfaces
+
+# 環境変数の設定
+export ROS_DISTRO=humble
+export ROS_VERSION=2
+export ROS_PYTHON_VERSION=3
+export AMENT_PREFIX_PATH=$PWD/install/interfaces:$CONDA_PREFIX
+export CMAKE_PREFIX_PATH=$PWD/install/interfaces:$CONDA_PREFIX
+export PYTHONPATH=$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
+
+# DiaROSパッケージのビルド
 colcon build --packages-select diaros_package
-source ./install/local_setup.bash
 
 # Pythonモジュールのインストール
 cd ../DiaROS_py
+
+# pyproject.tomlのPythonバージョン要件を確認（3.9以上であること）
+# 必要に応じて編集: requires-python = ">=3.9"
+
 pip install -e .
 ```
 
@@ -144,15 +171,36 @@ cd macos-x64
 ./run
 ```
 
+### 8.5. HuggingFaceトークンの設定（必要な場合）
+
+一部のモデルアクセスにトークンが必要です：
+
+```bash
+# HuggingFace CLIでログイン
+pip install huggingface-cli
+huggingface-cli login
+
+# または環境変数で設定
+export HF_TOKEN=your_token_here
+```
+
 ### 9. DiaROSの起動
 
 ```bash
 # Pixi環境内で
-cd ~/DiaROS_pixi/DiaROS_imamoto
+cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 pixi shell
 
-# ROS2環境の設定
-source DiaROS_ros/install/local_setup.bash
+# 環境変数の設定
+export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用
+export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
+export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
+
+# 動的ライブラリパスの設定（必要な場合）
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
+
+# power_calibration.wavファイルのコピー（初回のみ）
+cp ../DiaROS_py/diaros/power_calibration.wav .
 
 # DiaROSを起動
 ros2 launch diaros_package sdsmod.launch.py
@@ -221,6 +269,26 @@ pixi add python-colcon-common-extensions
 pixi shell
 # または
 pixi run ros2 <command>
+```
+
+### 動的ライブラリロードエラー
+```bash
+# "Library not loaded: @rpath/libinterfaces__rosidl_generator_py.dylib" エラーの場合
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
+```
+
+### "No module named 'playsound'" エラー
+```bash
+# 必須パッケージをインストール
+pip install playsound pydub PyObjC
+```
+
+### "Token is required (`token=True`)" エラー
+```bash
+# HuggingFaceトークンを設定
+huggingface-cli login
+# または
+export HF_TOKEN=your_token_here
 ```
 
 ## 利点と制限
