@@ -56,7 +56,13 @@ class RealtimeAizuchiPredictor:
         self.prediction_queue = Queue()
         self.audio_level_queue = Queue()
         self.processing_time_queue = Queue()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # デバイス選択（MPS/CUDA/CPU自動選択）
+        try:
+            from . import device_utils
+            self.device = device_utils.get_optimal_device(verbose=True)
+        except:
+            # フォールバック
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         sys.stdout.write(f"使用デバイス: {self.device}\n")
         sys.stdout.flush()
         

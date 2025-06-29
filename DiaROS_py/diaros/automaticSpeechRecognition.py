@@ -266,11 +266,18 @@ class AutomaticSpeechRecognition:
         self.processor = Wav2Vec2Processor.from_pretrained(MODEL_ID, tokenizer=self.tokenizer)
         self.model = AutoModelForCTC.from_pretrained(MODEL_ID)
         self.model.eval()
-        if USE_GPU and torch.cuda.is_available():
-            device = torch.device("cuda")
-            self.model.to(device)
-        else:
-            device = torch.device("cpu")
+        
+        # デバイス選択（MPS/CUDA/CPU自動選択）
+        try:
+            from . import device_utils
+            self.model, device = device_utils.move_model_to_device(self.model, verbose=True)
+        except:
+            # フォールバック（device_utilsが使えない場合）
+            if USE_GPU and torch.cuda.is_available():
+                device = torch.device("cuda")
+                self.model.to(device)
+            else:
+                device = torch.device("cpu")
         sys.stdout.write('ASR model loaded.\n')
         sys.stdout.flush()
 

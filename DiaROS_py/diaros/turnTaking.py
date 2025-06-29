@@ -56,7 +56,13 @@ def draw_bar(volume, max_volume=1.0, bar_length=50):
 
 class TurnTakingModel:
     def __init__(self, model_id="SiRoZaRuPa/japanese-wav2vec2-base-turntaking-CSJ"):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # デバイス選択（MPS/CUDA/CPU自動選択）
+        try:
+            from . import device_utils
+            self.device = device_utils.get_optimal_device(verbose=True)
+        except:
+            # フォールバック
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = Wav2Vec2ForSequenceClassification.from_pretrained(
             model_id, token=True
         ).to(self.device)

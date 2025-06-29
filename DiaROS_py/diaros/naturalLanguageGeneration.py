@@ -39,8 +39,13 @@ class NaturalLanguageGeneration:
         # 日本語対応の軽量モデルを使用（rinna/japanese-gpt2-small）
         model_name = "rinna/japanese-gpt2-small"
         
-        # デバイスの設定
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # デバイス選択（MPS/CUDA/CPU自動選択）
+        try:
+            from . import device_utils
+            self.device = device_utils.get_optimal_device(verbose=True)
+        except:
+            # フォールバック
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         sys.stdout.write(f'Using device: {self.device}\n')
         
         # トークナイザーとモデルの読み込み
