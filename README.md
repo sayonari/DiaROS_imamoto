@@ -424,31 +424,63 @@ source ~/.zshrc
 ```
 
 #### Pixiを使ったROS2環境のセットアップ（推奨）
+
+##### 1. Pixiのインストールとプロジェクト作成
 ```bash
 # Pixiのインストール
 curl -fsSL https://pixi.sh/install.sh | bash
 source ~/.zshrc  # または ~/.bashrc
 
-# ROS2プロジェクトの作成
+# プロジェクトディレクトリの作成
 mkdir -p ~/DiaROS_pixi && cd ~/DiaROS_pixi
+
+# Pixiプロジェクトの初期化（Python 3.9を使用）
 pixi init diaros_workspace -c robostack-humble -c conda-forge
 cd diaros_workspace
+```
+
+##### 2. ROS2 Humbleとツールのインストール
+```bash
+# Python 3.9を最初に追加（重要）
+pixi add python=3.9
 
 # ROS2 Humbleのインストール
-pixi add ros-humble-desktop colcon-common-extensions python=3.10
+pixi add ros-humble-desktop colcon-common-extensions pip
 
-# DiaROSのクローン
+# ビルドツールの追加
+pixi add cython setuptools-scm
+```
+
+##### 3. DiaROSのクローン
+```bash
 cd ~/DiaROS_pixi
 git clone https://github.com/sayonari/DiaROS_imamoto.git
+```
 
-# Pixi環境で依存パッケージをインストール
-cd diaros_workspace
+##### 4. Pixi環境でのPythonパッケージインストール
+```bash
+# Pixi環境に入る
+cd ~/DiaROS_pixi/diaros_workspace
 pixi shell
-pip install torch torchvision torchaudio transformers numpy==1.24.3
-pip install pyaudio sounddevice aubio librosa scipy
 
-# MPS確認
+# 基本パッケージのインストール
+pip install numpy==1.24.3  # NumPy 1.xに固定（重要）
+pip install torch torchvision torchaudio
+pip install transformers huggingface-hub
+pip install pyaudio sounddevice librosa scipy
+pip install matplotlib requests pyyaml webrtcvad pyworld soundfile
+
+# aubioのインストール（macOSでのビルドエラー対策）
+brew install aubio  # Homebrewでライブラリをインストール
+export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
+export CFLAGS="-Wno-error=incompatible-function-pointer-types"
+export LDFLAGS="-L/opt/homebrew/lib"  
+export CPPFLAGS="-I/opt/homebrew/include"
+pip install aubio --no-cache-dir
+
+# インストール確認
 python -c "import torch; print(f'MPS available: {torch.backends.mps.is_available()}')"
+pip list | grep -E "aubio|pyaudio|torch|transformers"
 ```
 
 **詳細**: 📖 [docs/macos_pixi_ros2_setup.md](docs/macos_pixi_ros2_setup.md)
@@ -457,28 +489,75 @@ python -c "import torch; print(f'MPS available: {torch.backends.mps.is_available
 ROS2なしでも基本機能は動作します。詳細は [docs/macos_quick_start.md](docs/macos_quick_start.md) を参照。
 
 #### DiaROSのビルドと起動（Pixi環境）
+
+##### 5. ROS2パッケージのビルド
 ```bash
-# Pixi環境に入る
-cd ~/DiaROS_pixi/diaros_workspace
-pixi shell
-
-# DiaROSのビルド
+# Pixi環境でDiaROSディレクトリに移動
 cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
-colcon build --cmake-args -DCMAKE_C_FLAGS=-fPIC --packages-select interfaces
-source ./install/local_setup.bash
-colcon build --packages-select diaros_package
-source ./install/local_setup.bash
 
-# Pythonモジュールのインストール
+# 環境変数の設定（重要）
+export Python3_ROOT_DIR=$CONDA_PREFIX
+export Python3_EXECUTABLE=$CONDA_PREFIX/bin/python
+export Python3_INCLUDE_DIR=$CONDA_PREFIX/include/python3.9
+export Python3_LIBRARY=$CONDA_PREFIX/lib/libpython3.9.dylib
+export Python3_NumPy_INCLUDE_DIR=$(python -c "import numpy; print(numpy.get_include())")
+
+# interfacesパッケージのビルド
+colcon build \
+  --cmake-args \
+  -DCMAKE_C_FLAGS=-fPIC \
+  -DPython3_FIND_STRATEGY=LOCATION \
+  -DPython3_ROOT_DIR=$CONDA_PREFIX \
+  --packages-select interfaces
+
+# 環境変数の設定（DiaROSパッケージ用）
+export ROS_DISTRO=humble
+export ROS_VERSION=2
+export ROS_PYTHON_VERSION=3
+export AMENT_PREFIX_PATH=$PWD/install/interfaces:$CONDA_PREFIX
+export CMAKE_PREFIX_PATH=$PWD/install/interfaces:$CONDA_PREFIX
+export PYTHONPATH=$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
+
+# DiaROSパッケージのビルド
+colcon build --packages-select diaros_package
+```
+
+##### 6. DiaROS Pythonモジュールのインストール
+```bash
+# DiaROS_pyディレクトリに移動
 cd ../DiaROS_py
+
+# pyproject.tomlのPythonバージョン要件を確認（3.9以上であること）
+# 必要に応じて編集: requires-python = ">=3.9"
+
+# インストール
 pip install -e .
 
-# VOICEVOXの起動（別ターミナル）
-# https://github.com/VOICEVOX/voicevox_engine/releases からダウンロード
+# インストール確認
+python -c "import diaros; print('DiaROS module imported successfully')"
+```
+
+##### 7. VOICEVOXの起動（別ターミナル）
+```bash
+# VOICEVOXをダウンロード
+cd ~/Downloads
+curl -L https://github.com/VOICEVOX/voicevox_engine/releases/download/0.14.0/macos-x64.zip -o voicevox.zip
+unzip voicevox.zip
+cd macos-x64
+./run
+```
+
+##### 8. DiaROSの起動
+```bash
+# DiaROSディレクトリに移動
+cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+
+# 環境変数の設定
+export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用
+export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
+export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
 
 # DiaROSの起動
-export DIAROS_DEVICE=mps  # MPSを使用
-cd ~/DiaROS_pixi/DiaROS_imamoto
 ros2 launch diaros_package sdsmod.launch.py
 ```
 
@@ -517,6 +596,44 @@ unset DIAROS_DEVICE
 ```bash
 brew reinstall portaudio
 pip uninstall pyaudio && pip install pyaudio
+```
+
+#### aubioビルドエラー
+「incompatible function pointer types」エラーが出る場合：
+```bash
+# Homebrewでaubioライブラリをインストール
+brew install aubio
+
+# コンパイラフラグを設定
+export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
+export CFLAGS="-Wno-error=incompatible-function-pointer-types"
+export LDFLAGS="-L/opt/homebrew/lib"
+export CPPFLAGS="-I/opt/homebrew/include"
+
+# aubioをインストール
+pip install aubio --no-cache-dir
+```
+
+詳細: [docs/macos_aubio_build_fix.md](docs/macos_aubio_build_fix.md)
+
+#### ROS2パッケージが見つからない
+「Package 'diaros_package' not found」エラーが出る場合：
+```bash
+# 環境変数を正しく設定
+export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
+export ROS_DISTRO=humble
+export ROS_VERSION=2
+
+# パッケージの確認
+ros2 pkg list | grep diaros
+```
+
+#### Pythonバージョンの不一致
+CMakeがPython 3.12を見つける場合：
+```bash
+# Pixi環境のPython 3.9を明示的に指定
+export Python3_EXECUTABLE=$CONDA_PREFIX/bin/python
+export Python3_ROOT_DIR=$CONDA_PREFIX
 ```
 
 #### MPSエラー

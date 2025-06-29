@@ -41,6 +41,9 @@ cd diaros_workspace
 ### 3. ROS2 Humbleのインストール
 
 ```bash
+# Python 3.9を最初に追加（ROS2 Humbleの要件）
+pixi add python=3.9
+
 # ROS2 Humble Desktopパッケージをインストール
 # （初回は時間がかかります）
 pixi add ros-humble-desktop
@@ -51,8 +54,8 @@ pixi add colcon-common-extensions "setuptools<=58.2.0"
 # C++開発環境（必要な場合）
 pixi add ros-humble-ament-cmake-auto compilers pkg-config cmake ninja
 
-# Python開発環境
-pixi add python=3.10 pip
+# pipを追加
+pixi add pip
 ```
 
 ### 4. ROS2動作確認
@@ -87,7 +90,20 @@ pixi shell  # Pixi環境に入る
 pip install torch torchvision torchaudio
 pip install transformers huggingface-hub
 pip install numpy==1.24.3 scipy librosa soundfile
-pip install pyaudio sounddevice webrtcvad aubio pyworld
+
+# aubioのインストール（macOSでコンパイルエラーが出る場合）
+# Homebrewでaubioライブラリをインストール
+brew install aubio
+export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
+
+# コンパイラフラグを設定してaubioをインストール
+export CFLAGS="-Wno-error=incompatible-function-pointer-types"
+export LDFLAGS="-L/opt/homebrew/lib"
+export CPPFLAGS="-I/opt/homebrew/include"
+pip install aubio --no-cache-dir
+
+# その他のパッケージ
+pip install pyaudio sounddevice webrtcvad pyworld
 pip install matplotlib requests pyyaml
 ```
 
@@ -172,6 +188,21 @@ pixi clean
 pixi add portaudio
 pip uninstall pyaudio
 pip install pyaudio
+```
+
+### aubioビルドエラー（incompatible function pointer types）
+```bash
+# Homebrewでaubioライブラリをインストール
+brew install aubio
+
+# 環境変数を設定
+export PKG_CONFIG_PATH="/opt/homebrew/lib/pkgconfig:$PKG_CONFIG_PATH"
+export CFLAGS="-Wno-error=incompatible-function-pointer-types"
+export LDFLAGS="-L/opt/homebrew/lib"
+export CPPFLAGS="-I/opt/homebrew/include"
+
+# aubioをインストール
+pip install aubio --no-cache-dir
 ```
 
 ### MPSエラー

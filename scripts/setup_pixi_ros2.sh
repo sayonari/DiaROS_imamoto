@@ -61,12 +61,12 @@ echo -e "\n${YELLOW}4. ROS2 Humbleのインストール（時間がかかりま�
 echo "インストールするパッケージ:"
 echo "  - ros-humble-desktop"
 echo "  - colcon-common-extensions"
-echo "  - python=3.10"
+echo "  - python=3.9 (ROS2 Humbleの要件)"
 echo ""
 read -p "続行しますか？ (Y/n): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-    pixi add ros-humble-desktop colcon-common-extensions python=3.10 pip
+    pixi add python=3.9 ros-humble-desktop colcon-common-extensions pip
     echo -e "${GREEN}✅ ROS2 Humbleのインストールが完了しました${NC}"
 fi
 
@@ -121,6 +121,10 @@ echo -e "1. ${YELLOW}cd $PIXI_DIR/diaros_workspace${NC}"
 echo -e "2. ${YELLOW}pixi shell${NC} でPixi環境に入る"
 echo -e "3. Python依存パッケージをインストール:"
 echo -e "   ${YELLOW}pip install torch transformers pyaudio numpy==1.24.3${NC}"
+echo -e "   ${YELLOW}# aubioのインストール（コンパイラエラーが出る場合）:${NC}"
+echo -e "   ${YELLOW}brew install aubio${NC}"
+echo -e "   ${YELLOW}export CFLAGS=\"-Wno-error=incompatible-function-pointer-types\"${NC}"
+echo -e "   ${YELLOW}pip install aubio --no-cache-dir${NC}"
 echo -e "4. DiaROSをビルド・実行"
 echo -e "\nまたは、以下を実行:"
 echo -e "${YELLOW}$PIXI_DIR/run_diaros_pixi.sh${NC}"
