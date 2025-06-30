@@ -19,7 +19,7 @@ class AcousticAnalysis:
     def __init__(self, rate):
         sys.stdout.write('acousticAnalysis start\n')
         self.rate = rate
-        self.pitch_o = pitch("yinfast", win_s, hop_s, rate)
+        self.pitch_o = pitch("fcomb", win_s, hop_s, rate)  # より正確なピッチ検出のためfcombメソッドを使用
         self.pitch_o.set_unit("Hz")
         self.pitch_o.set_tolerance(tolerance)
         self.f0_list = []
@@ -147,6 +147,10 @@ class AcousticAnalysis:
             # データの型と形状を確認するデバッグ出力を追加
             # sys.stdout.write(f"DEBUG: chunk_resampled type: {chunk_resampled.dtype}, shape: {chunk_resampled.shape}\n")
             f0 = float(self.pitch_o(chunk_resampled)[0])
+            confidence = self.pitch_o.get_confidence()
+            # confidence値が低いか、異常に高い周波数の場合は0に設定
+            if confidence < 0.8 or f0 > f0_upper:
+                f0 = 0.0
         else:
             f0 = float(0)
             power = float(0)

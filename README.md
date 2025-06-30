@@ -279,12 +279,12 @@ ros2 launch diaros_package sdsmod.launch.py
 
 ## 5. ROS2モニタリングツールの活用
 
-### 5.0 DiaROS専用モニタリングツール（Docker環境）
+### 5.0 DiaROS専用モニタリングツール
 
-DiaROSには専用の統合モニタリングスクリプト`monitor.sh`が用意されています：
+DiaROSには専用の統合モニタリングスクリプト`monitor.sh`が用意されています。このツールはネイティブ環境とDocker環境の両方に対応しています：
 
 ```bash
-# Docker環境でモニタリングツールを起動
+# モニタリングツールを起動
 ./scripts/monitor.sh
 ```
 

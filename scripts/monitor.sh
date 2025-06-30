@@ -1,14 +1,38 @@
 #!/bin/bash
 
-# DiaROS Docker Monitoring Script
+# DiaROS Monitoring Script
+# ネイティブ環境およびDocker環境の両方に対応
 
 set -e
+
+# 実行環境の検出
+is_docker=false
+if [ -f /.dockerenv ] || grep -qa docker /proc/1/cgroup 2>/dev/null; then
+    is_docker=true
+fi
+
+# コマンド実行関数
+run_command() {
+    if [ "$is_docker" = true ]; then
+        docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && $1"
+    else
+        bash -c "$1"
+    fi
+}
+
+# GUI表示対応コマンド実行関数
+run_gui_command() {
+    if [ "$is_docker" = true ]; then
+        docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && $1"
+    else
+        bash -c "$1"
+    fi
+}
 
 # DiaROSシステムヘルスチェック関数
 check_diaros_health() {
     echo "DiaROSシステムの稼働状況を確認中..."
-    docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-        echo '稼働中のDiaROSノード:' && \
+    run_command "echo '稼働中のDiaROSノード:' && \
         ros2 node list | grep -E '(speech_input|acoustic_analysis|automatic_speech_recognition|dialog_management|speech_synthesis|turn_taking|back_channel)' && \
         echo '' && \
         echo 'トピック周期:' && \
@@ -55,15 +79,37 @@ show_menu() {
     echo -n "選択してください [1-24]: "
 }
 
-# Check if container is running
-if ! docker ps | grep -q diaros_container; then
-    echo "Error: DiaROS container is not running."
-    echo "Please run ./scripts/run.sh first."
-    exit 1
+# 環境に応じた準備
+if [ "$is_docker" = false ]; then
+    # ネイティブ環境の場合
+    # ROS2環境の確認
+    if [ -z "$ROS_DISTRO" ]; then
+        echo "警告: ROS2環境が設定されていません。"
+        echo "以下のコマンドを実行してください:"
+        echo "  source /opt/ros/humble/setup.bash"
+        echo "  source ~/DiaROS_imamoto/DiaROS_ros/install/local_setup.bash"
+        exit 1
+    fi
+    
+    # DiaROSワークスペースの確認
+    if [ ! -d "$HOME/DiaROS_imamoto/DiaROS_ros/install" ]; then
+        echo "警告: DiaROSがビルドされていません。"
+        echo "DiaROS_ros/ディレクトリでcolcon buildを実行してください。"
+        exit 1
+    fi
+else
+    # Docker環境の場合
+    if ! docker ps | grep -q diaros_container; then
+        echo "エラー: DiaROSコンテナが起動していません。"
+        echo "./scripts/run.sh を実行してください。"
+        exit 1
+    fi
 fi
 
-# Check for XQuartz on macOS
+# macOSでのGUI表示設定
 if [[ "$OSTYPE" == "darwin"* ]]; then
+    if [ "$is_docker" = true ]; then
+        # Docker環境でのXQuartz設定
     if ! pgrep -f "XQuartz|X11\.bin|Xquartz" > /dev/null; then
         echo "Warning: XQuartz may not be running."
         echo "Please ensure XQuartz is installed and running:"
@@ -88,47 +134,48 @@ while true; do
     
     case $choice in
         1)
-            echo "Starting rqt..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && rqt"
+            echo "rqtを起動中..."
+            run_gui_command "rqt"
             ;;
         2)
-            echo "Starting rqt_graph..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && rqt_graph"
+            echo "rqt_graphを起動中..."
+            run_gui_command "rqt_graph"
             ;;
         3)
-            echo "Starting rqt_plot..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && rqt_plot"
+            echo "rqt_plotを起動中..."
+            run_gui_command "rqt_plot"
             ;;
         4)
-            echo "Starting rqt_topic..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && rqt_topic"
+            echo "rqt_topicを起動中..."
+            run_gui_command "rqt_topic"
             ;;
         5)
-            echo "Starting rqt_bag..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && rqt_bag"
+            echo "rqt_bagを起動中..."
+            run_gui_command "rqt_bag"
             ;;
         6)
-            echo "Starting rqt_console..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && rqt_console"
+            echo "rqt_consoleを起動中..."
+            run_gui_command "rqt_console"
             ;;
         7)
-            echo "Listing ROS2 topics..."
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && ros2 topic list -v"
+            echo "ROS2トピックを一覧表示中..."
+            run_command "ros2 topic list -v"
             echo ""
-            echo "Press Enter to continue..."
+            echo "Enterキーを押して続行..."
             read -r
             ;;
         8)
-            echo "Starting bag recording..."
-            echo "Enter topics to record (space-separated, or 'all' for all topics):"
+            echo "bag録画を開始します..."
+            echo "録画するトピックを入力してください (スペース区切り、'all'で全トピック):"
             read -r topics
             
+            timestamp=$(date +%Y%m%d_%H%M%S)
             if [ "$topics" = "all" ]; then
-                echo "Recording all topics to /recordings/diaros_$(date +%Y%m%d_%H%M%S)"
-                docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && cd /recordings && ros2 bag record -a -o diaros_$(date +%Y%m%d_%H%M%S)"
+                echo "全トピックを録画中: diaros_$timestamp"
+                run_command "ros2 bag record -a -o diaros_$timestamp"
             else
-                echo "Recording specified topics to /recordings/diaros_$(date +%Y%m%d_%H%M%S)"
-                docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && cd /recordings && ros2 bag record $topics -o diaros_$(date +%Y%m%d_%H%M%S)"
+                echo "指定トピックを録画中: diaros_$timestamp"
+                run_command "ros2 bag record $topics -o diaros_$timestamp"
             fi
             ;;
         9)
@@ -140,8 +187,7 @@ while true; do
             ;;
         10)
             echo "DiaROS対話フローを監視中..."
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                echo '主要DiaROSトピックを監視:' && \
+            run_command "echo '主要DiaROSトピックを監視:' && \
                 echo '============================' && \
                 echo '音声入力周波数:' && \
                 timeout 3 ros2 topic hz /mic_audio_float32 2>/dev/null | tail -1 && \
@@ -160,18 +206,15 @@ while true; do
             ;;
         11)
             echo "音声入力を監視中... (Ctrl+Cで終了)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                ros2 topic hz /mic_audio_float32"
+            run_command "ros2 topic hz /mic_audio_float32"
             ;;
         12)
             echo "音声認識出力を監視中... (Ctrl+Cで終了)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                ros2 topic echo /ASRtoNLU"
+            run_command "ros2 topic echo /ASRtoNLU"
             ;;
         13)
             echo "総合対話モニターを起動中..."
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                tmux new-session -d -s dialog_monitor && \
+            run_command "tmux new-session -d -s dialog_monitor && \
                 tmux split-window -h && \
                 tmux split-window -v && \
                 tmux select-pane -t 0 && \
@@ -184,51 +227,44 @@ while true; do
             ;;
         14)
             echo "ターンテイキングを監視中... (Ctrl+Cで終了)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                ros2 topic echo /TTtoDM"
+            run_command "ros2 topic echo /TTtoDM"
             ;;
         15)
             echo "バックチャネル応答を監視中... (Ctrl+Cで終了)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                ros2 topic echo /BCtoDM"
+            run_command "ros2 topic echo /BCtoDM"
             ;;
         16)
             echo "DiaROS対話セッションを録画中..."
             timestamp=$(date +%Y%m%d_%H%M%S)
-            echo "録画ファイル: /recordings/diaros_dialog_$timestamp"
+            echo "録画ファイル: diaros_dialog_$timestamp"
             echo "Ctrl+Cで録画を停止"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                cd /recordings && \
-                ros2 bag record \
-                    /mic_audio_float32 \
-                    /AAtoDM \
-                    /ASRtoNLU \
-                    /NLUtoDM \
-                    /DMtoNLG \
-                    /NLGtoSS \
-                    /SStoDM \
-                    /TTtoDM \
-                    /BCtoDM \
-                    -o diaros_dialog_$timestamp"
+            run_command "ros2 bag record \
+                /mic_audio_float32 \
+                /AAtoDM \
+                /ASRtoNLU \
+                /NLUtoDM \
+                /DMtoNLG \
+                /NLGtoSS \
+                /SStoDM \
+                /TTtoDM \
+                /BCtoDM \
+                -o diaros_dialog_$timestamp"
             ;;
         17)
             echo "DiaROS対話フローグラフを生成中..."
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                rqt_graph --topic-filter '/(mic_audio_float32|AAtoDM|ASRtoNLU|NLUtoDM|DMtoNLG|NLGtoSS|SStoDM|TTtoDM|BCtoDM)/'"
+            run_gui_command "rqt_graph --topic-filter '/(mic_audio_float32|AAtoDM|ASRtoNLU|NLUtoDM|DMtoNLG|NLGtoSS|SStoDM|TTtoDM|BCtoDM)/'"
             ;;
         18)
             echo "トピック周期を監視します。"
             echo "監視したいトピック名を入力してください (/mic_audio_float32 など):"
             read -r topic_name
             echo "$topic_name の周期を監視中... (Ctrl+Cで終了)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                ros2 topic hz $topic_name"
+            run_command "ros2 topic hz $topic_name"
             ;;
         19)
             echo "複数トピックの周期を同時監視します。"
             echo "主要DiaROSトピックの周期を監視中... (Ctrl+Cで終了)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                echo '=== 音声入力周期 ===' && \
+            run_command "echo '=== 音声入力周期 ===' && \
                 timeout 5 ros2 topic hz /mic_audio_float32 & \
                 echo '' && \
                 echo '=== 音響解析周期 ===' && \
@@ -247,8 +283,7 @@ while true; do
         20)
             echo "エンドツーエンド遅延測定を開始します。"
             echo "音声入力から音声出力までの遅延を測定中..."
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && \
-                python3 -c '
+            run_command "python3 -c '
                 import rclpy
                 from rclpy.node import Node
                 import time
@@ -278,36 +313,44 @@ while true; do
         21)
             echo "Plotjugglerを起動します..."
             echo "注意: plotjuggler-rosがインストールされている必要があります"
-            docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && \
-                if command -v plotjuggler &> /dev/null; then \
-                    plotjuggler; \
-                else \
-                    echo 'Plotjugglerがインストールされていません。'; \
-                    echo 'インストールコマンド: sudo apt install ros-humble-plotjuggler-ros'; \
-                fi"
+            run_gui_command "if command -v plotjuggler &> /dev/null; then \
+                plotjuggler; \
+            else \
+                echo 'Plotjugglerがインストールされていません。'; \
+                echo 'インストールコマンド: sudo apt install ros-humble-plotjuggler-ros'; \
+            fi"
             ;;
         22)
             echo "性能トレースを開始します。"
             echo "セッション名を入力してください:"
             read -r session_name
             echo "トレースを開始中... (Ctrl+Cで停止)"
-            docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && \
-                if command -v ros2 trace &> /dev/null; then \
-                    ros2 trace start $session_name; \
-                else \
-                    echo 'ros2-tracingがインストールされていません。'; \
-                    echo 'インストールコマンド: sudo apt install ros-humble-tracing-tools-trace'; \
-                fi"
+            run_command "if command -v ros2 trace &> /dev/null; then \
+                ros2 trace start $session_name; \
+            else \
+                echo 'ros2-tracingがインストールされていません。'; \
+                echo 'インストールコマンド: sudo apt install ros-humble-tracing-tools-trace'; \
+            fi"
             ;;
         23)
             echo "システムリソースを監視中..."
-            docker exec -it diaros_container bash -c "echo 'DiaROSノードのCPU/メモリ使用状況:' && \
-                echo '================================' && \
-                ps aux | grep -E '(ros2|speech_input|acoustic_analysis|automatic_speech_recognition|dialog_management|speech_synthesis|turn_taking|back_channel)' | grep -v grep && \
-                echo '' && \
-                echo 'コンテナ全体のリソース使用状況:' && \
-                echo '================================' && \
-                top -b -n 1 | head -20"
+            if [ "$is_docker" = true ]; then
+                run_command "echo 'DiaROSノードのCPU/メモリ使用状況:' && \
+                    echo '================================' && \
+                    ps aux | grep -E '(ros2|speech_input|acoustic_analysis|automatic_speech_recognition|dialog_management|speech_synthesis|turn_taking|back_channel)' | grep -v grep && \
+                    echo '' && \
+                    echo 'コンテナ全体のリソース使用状況:' && \
+                    echo '================================' && \
+                    top -b -n 1 | head -20"
+            else
+                echo "DiaROSノードのCPU/メモリ使用状況:"
+                echo "================================"
+                ps aux | grep -E '(ros2|speech_input|acoustic_analysis|automatic_speech_recognition|dialog_management|speech_synthesis|turn_taking|back_channel)' | grep -v grep
+                echo ""
+                echo "システム全体のリソース使用状況:"
+                echo "================================"
+                top -b -n 1 | head -20
+            fi
             echo ""
             echo "Enterキーを押して続行..."
             read -r

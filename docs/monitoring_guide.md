@@ -2,7 +2,7 @@
 
 ## 概要
 
-DiaROSには、音声対話システムの動作を監視・デバッグするための統合モニタリングツール`monitor.sh`が用意されています。このツールはDocker環境でDiaROSを実行している際に、システムの状態をリアルタイムで監視し、問題の診断を支援します。
+DiaROSには、音声対話システムの動作を監視・デバッグするための統合モニタリングツール`monitor.sh`が用意されています。このツールはネイティブ環境とDocker環境の両方に対応しており、システムの状態をリアルタイムで監視し、問題の診断を支援します。
 
 ## monitor.shの起動方法
 
@@ -12,8 +12,19 @@ DiaROSには、音声対話システムの動作を監視・デバッグする�
 ```
 
 **前提条件**：
+
+### ネイティブ環境の場合
+- ROS2 Humbleがインストールされていること
+- DiaROSがビルドされていること（`colcon build`実行済み）
+- ROS2環境が設定されていること：
+  ```bash
+  source /opt/ros/humble/setup.bash
+  source ~/DiaROS_imamoto/DiaROS_ros/install/local_setup.bash
+  ```
+
+### Docker環境の場合
 - DiaROSコンテナ（`diaros_container`）が起動していること
-- macOSの場合：XQuartzがインストール・起動されていること
+- macOSの場合：XQuartzがインストール・起動されていること（GUIツール使用時）
 
 ## メニュー構成
 
@@ -123,8 +134,14 @@ DiaROSの音声対話システムに特化した監視機能です：
 
 ## トラブルシューティング
 
-### XQuartzエラー（macOSのみ）
+### GUIツールのトラブルシューティング
 
+#### macOSネイティブ環境
+GUIツールは通常そのまま動作しますが、問題がある場合は：
+1. ディスプレイ環境変数を確認：`echo $DISPLAY`
+2. 必要に応じて設定：`export DISPLAY=:0`
+
+#### macOS Docker環境でのXQuartzエラー
 GUIツールが起動しない場合：
 
 1. XQuartzがインストールされているか確認
@@ -139,20 +156,33 @@ GUIツールが起動しない場合：
 
 対話状態総合モニター（13番）でエラーが出る場合：
 
-1. Dockerコンテナ内にtmuxがインストールされているか確認
-2. 必要に応じてコンテナ内でインストール：
-   ```bash
-   docker exec -it diaros_container apt update && apt install tmux
-   ```
+#### ネイティブ環境
+```bash
+# Ubuntu/Debian
+sudo apt install tmux
+
+# macOS
+brew install tmux
+```
+
+#### Docker環境
+```bash
+docker exec -it diaros_container apt update && apt install tmux
+```
 
 ### Plotjugglerが見つからない
 
 21番でPlotjugglerが起動しない場合：
 
-1. Dockerコンテナ内でインストール：
-   ```bash
-   docker exec -it diaros_container apt install ros-humble-plotjuggler-ros
-   ```
+#### ネイティブ環境
+```bash
+sudo apt install ros-humble-plotjuggler-ros
+```
+
+#### Docker環境
+```bash
+docker exec -it diaros_container apt install ros-humble-plotjuggler-ros
+```
 
 ## 高度な使い方
 
@@ -160,8 +190,13 @@ GUIツールが起動しない場合：
 
 特定のトピックを詳細に監視したい場合：
 
+#### ネイティブ環境
 ```bash
-# monitor.shの外で直接実行
+ros2 topic echo /your_custom_topic
+```
+
+#### Docker環境
+```bash
 docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && ros2 topic echo /your_custom_topic"
 ```
 
@@ -175,8 +210,13 @@ docker exec -it diaros_container bash -c "source /opt/ros/humble/setup.bash && s
 
 ### 監視データのエクスポート
 
-録画したbagファイルは`/recordings`ディレクトリに保存されます。これらのファイルは後で分析したり、問題の再現に使用できます：
+録画したbagファイルは現在のディレクトリまたは指定したディレクトリに保存されます。
 
+#### ネイティブ環境
+bagファイルは実行したディレクトリに直接保存されます。
+
+#### Docker環境
+録画したbagファイルは`/recordings`ディレクトリに保存されます：
 ```bash
 # ホストマシンにコピー
 docker cp diaros_container:/recordings/diaros_dialog_20240630_120000 ./
