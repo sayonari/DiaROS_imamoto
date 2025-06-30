@@ -224,6 +224,24 @@ ros2 launch diaros_package sdsmod.launch.py
 
 ## 5. ROS2モニタリングツールの活用
 
+### 5.0 DiaROS専用モニタリングツール（Docker環境）
+
+DiaROSには専用の統合モニタリングスクリプト`monitor.sh`が用意されています：
+
+```bash
+# Docker環境でモニタリングツールを起動
+./scripts/monitor.sh
+```
+
+このスクリプトは以下の機能を提供します：
+- 基本的なROS2モニタリングツール（rqt、rqt_graph等）
+- DiaROS専用の対話フロー監視
+- 音声認識・合成の状態監視
+- 性能測定ツール（トピック周期、遅延測定等）
+- システムリソース監視
+
+**📖 詳細な使い方**: [docs/monitoring_guide.md](docs/monitoring_guide.md) を参照してください。
+
 ### 5.1 rqt_graph - ノードとトピックの可視化
 ```bash
 # システム全体の通信構造を視覚的に確認

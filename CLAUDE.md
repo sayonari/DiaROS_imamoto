@@ -2,6 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🔴 最重要事項 / CRITICAL REQUIREMENTS
+
+### 日本語対応 / Japanese Language Support
+**必ず日本語で対話してください。** ユーザーとのすべてのコミュニケーションは日本語で行う必要があります。
+- コメント、説明、エラーメッセージなど、すべて日本語で記述
+- 技術用語は必要に応じて英語併記可
+- コード内のコメントも可能な限り日本語で記述
+
+**ALWAYS communicate in Japanese.** All communication with users must be in Japanese.
+- Comments, explanations, error messages should all be in Japanese
+- Technical terms can include English when necessary
+- Code comments should also be in Japanese whenever possible
+
 ## Essential Commands
 
 ### System Setup and Build
