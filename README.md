@@ -775,6 +775,31 @@ export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
 #### マイク権限
 システム設定 → プライバシーとセキュリティ → マイク → ターミナルを許可
 
+#### VOICEVOXの音声再生エラー
+「[ERROR] 合成音声ファイル名がありません」エラーが出る場合：
+
+1. VOICEVOXが正しく起動しているか確認：
+   ```bash
+   curl http://localhost:50021/version
+   ```
+
+2. 音声合成ファイルの作成を確認：
+   ```bash
+   # tmpディレクトリの確認
+   ls -la tmp/
+   ```
+
+3. デバッグログの有効化：
+   ```bash
+   # DiaROS_py/diaros/speechSynthesis.py のDEBUG = Trueに設定
+   ```
+
+4. Pythonモジュールの再インストール：
+   ```bash
+   cd DiaROS_py
+   python -m pip install . --user --force-reinstall
+   ```
+
 ### 9.6 必要なモデルへのアクセス
 
 HuggingFaceの制限付きモデルを使用するため：

@@ -189,6 +189,14 @@ class DialogManagement:
                     # ここで音声合成ファイル名があればそれを再生
                     if hasattr(self, 'latest_synth_filename') and self.latest_synth_filename:
                         wav_path = self.latest_synth_filename
+                        print(f"[DEBUG DM] TT判定時 - latest_synth_filename: {wav_path}")
+                        
+                        # ファイルが実際に存在するか確認
+                        if not os.path.exists(wav_path):
+                            sys.stdout.write(f"[ERROR] 音声ファイルが存在しません: {wav_path}\n")
+                            sys.stdout.flush()
+                            continue
+                            
                         try:
                             audio = AudioSegment.from_wav(wav_path)
                             duration_sec = len(audio) / 1000.0
@@ -196,7 +204,21 @@ class DialogManagement:
                             duration_sec = 2.0
                         sys.stdout.write(f"[TT] 合成音声再生 duration_sec={duration_sec}\n")
                         sys.stdout.flush()
-                        playsound(wav_path, True)
+                        
+                        # macOSでの音声再生
+                        try:
+                            if sys.platform == "darwin":
+                                # macOSの場合はafplayを使用
+                                os.system(f"afplay '{wav_path}'")
+                            else:
+                                # macOS対応の音声再生
+                                if sys.platform == "darwin":
+                                    os.system(f"afplay '{wav_path}'")
+                                else:
+                                    playsound(wav_path, True)
+                        except Exception as e:
+                            sys.stdout.write(f"[ERROR] 音声再生エラー: {e}\n")
+                            sys.stdout.flush()
                         self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
@@ -204,6 +226,10 @@ class DialogManagement:
                         self.latest_synth_filename = ""
                     else:
                         sys.stdout.write("[ERROR] 合成音声ファイル名がありません\n")
+                        if hasattr(self, 'latest_synth_filename'):
+                            print(f"[DEBUG DM] latest_synth_filename = '{self.latest_synth_filename}'")
+                        else:
+                            print("[DEBUG DM] latest_synth_filename属性が存在しません")
                 else:
                     self.response_update = False
                 last_handled_tt_time = tt_time
@@ -230,7 +256,11 @@ class DialogManagement:
                                     duration_sec = 2.0
                                 sys.stdout.write(f"[TT] 合成音声再生(pending) duration_sec={duration_sec}\n")
                                 sys.stdout.flush()
-                                playsound(wav_path, True)
+                                # macOS対応の音声再生
+                                if sys.platform == "darwin":
+                                    os.system(f"afplay '{wav_path}'")
+                                else:
+                                    playsound(wav_path, True)
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.latest_synth_filename = ""
                                 last_response_end_time = time.time() + duration_sec
@@ -245,7 +275,11 @@ class DialogManagement:
                                     duration_sec = 2.0
                                 sys.stdout.write(f"[TT] 再生音声長 duration_sec={duration_sec}\n")
                                 sys.stdout.flush()
-                                playsound(wav_path, True)
+                                # macOS対応の音声再生
+                                if sys.platform == "darwin":
+                                    os.system(f"afplay '{wav_path}'")
+                                else:
+                                    playsound(wav_path, True)
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.static_response_index += 1
                                 if self.static_response_index >= len(self.static_response_files):
@@ -274,7 +308,11 @@ class DialogManagement:
                         wav_path = f"static_back_channel_{random.randint(1, 2)}.wav"
                         audio = AudioSegment.from_wav(wav_path)
                         duration_sec = len(audio) / 1000.0
-                        playsound(wav_path, True)
+                        # macOS対応の音声再生
+                        if sys.platform == "darwin":
+                            os.system(f"afplay '{wav_path}'")
+                        else:
+                            playsound(wav_path, True)
                         last_back_channel_time = time.time()
                         is_playing_backchannel = True
                         last_backchannel_end_time = last_back_channel_time + duration_sec
@@ -370,7 +408,8 @@ class DialogManagement:
                     if DEBUG:sys.stdout.flush()
                     
                     # ./tmp/ ディレクトリ内の .wav ファイルを名前順にソート
-                    filenames = sorted(glob.glob("./tmp/*.wav"))
+                    tmp_dir = os.path.abspath('./tmp/')
+                    filenames = sorted(glob.glob(os.path.join(tmp_dir, "*.wav")))
 
                     # 名前順で最新のファイル名を取得
                     latest_filename = filenames[-1] if filenames else ""
@@ -483,6 +522,9 @@ class DialogManagement:
         # 追加: 音声合成ファイル名を受信したらTT閾値超え時に再生用に保存
         if "filename" in ss and ss["filename"]:
             self.latest_synth_filename = ss["filename"]
+            print(f"[DEBUG DM] updateSS - filename受信: {self.latest_synth_filename}")
+        else:
+            print(f"[DEBUG DM] updateSS - filenameなし (ss={ss})")
         # print(f"[ROS2] {ss['timestamp']}")
         if self.ss["is_speaking"] is True:
             self.speaking_time = datetime.now()

@@ -23,7 +23,9 @@ class RosSpeechSynthesis(Node):
 
     def play(self, nlg):
         text = str(nlg.reply)
+        print(f"[DEBUG ROS2_SS] 音声合成リクエスト: {text}")
         wav_path = self.speechSynthesis.run(text)
+        print(f"[DEBUG ROS2_SS] 音声合成結果: {wav_path}")
         # 音声合成後、ファイル名をIssでpublish
         # wav_msg = SynthWav()
         # wav_msg.filename = wav_path if wav_path else ""
@@ -46,8 +48,11 @@ class RosSpeechSynthesis(Node):
         # 直近の合成ファイル名を取得して送信
         if hasattr(self.speechSynthesis, 'last_tts_file'):
             ss.filename = self.speechSynthesis.last_tts_file if self.speechSynthesis.last_tts_file else ""
+            if ss.filename:
+                print(f"[DEBUG ROS2_SS] publish filename: {ss.filename}")
         else:
             ss.filename = ""
+            print("[DEBUG ROS2_SS] last_tts_file属性が存在しません")
         self.pub_ss.publish(ss)
         self.speechSynthesis.speak_end = False
 

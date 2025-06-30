@@ -95,21 +95,27 @@ class SpeechSynthesis():
 
     def __init__(self):
         self.tl = "ja"
-        self.TMP_DIR = './tmp/'
+        # 絶対パスを使用
+        self.TMP_DIR = os.path.abspath('./tmp/')
 
         # remove TMP directory & remake ----
         if os.path.exists(self.TMP_DIR):
             du = shutil.rmtree(self.TMP_DIR)
             time.sleep(0.3)
 
-        os.mkdir(self.TMP_DIR)
+        os.makedirs(self.TMP_DIR, exist_ok=True)
 
         self.speak_end = False
+        self.last_tts_file = None  # 初期化時にlast_tts_file属性を明示的に設定
 
         self.response_pause_length = 1
         self.prev_response_time = datetime.now()
 
-        playsound("power_calibration.wav", True)#アナウンス文を読み上げる
+        # macOS対応の音声再生
+        if sys.platform == "darwin":
+            os.system("afplay 'power_calibration.wav'")
+        else:
+            playsound("power_calibration.wav", True)#アナウンス文を読み上げる
     
     def trim_wav(self, input_file, output_file, trim_duration=0.1):# VOICEVOXのノイズ除去用
         # 入力ファイルを開く
@@ -147,10 +153,12 @@ class SpeechSynthesis():
                 ('speaker', speaker),
             )
             # 音声合成のリクエストを送るJSONのプリセットを要求
+            print(f"[DEBUG SS] VOICEVOXリクエスト: http://{host}:{port}/audio_query")
             response1 = requests.post(
                 f'http://{host}:{port}/audio_query',
                 params=params
             )
+            print(f"[DEBUG SS] VOICEVOXレスポンス: status={response1.status_code}")
             # response1からJSONオブジェクトを取得
             response1_data = response1.json()
             
@@ -220,21 +228,23 @@ class SpeechSynthesis():
             #Use the current date and time to create a unique file name
             current_time = datetime.now().strftime("%Y%m%d%H%M%S")
             
-            json_file = './tmp/' + str(current_time) + '.json'
+            json_file = os.path.join(self.TMP_DIR, str(current_time) + '.json')
             with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump(wrapped_data, f, ensure_ascii=False, indent=4)
             ###---###
 
             headers = {'Content-Type': 'application/json',}
+            print(f"[DEBUG SS] VOICEVOX合成リクエスト: http://{host}:{port}/synthesis")
             response2 = requests.post(
                 f'http://{host}:{port}/synthesis',
                 headers=headers,
                 params=params,
                 data=modified_json_str.encode('utf-8')
             )
+            print(f"[DEBUG SS] VOICEVOX合成レスポンス: status={response2.status_code}, size={len(response2.content)} bytes")
 
             ### jsonファイルが先に作成されるのでjsonファイルが作成された時刻に名前を合わせる
-            input_file = './{}/input_{}.wav'.format(self.TMP_DIR, current_time)
+            input_file = os.path.join(self.TMP_DIR, f'input_{current_time}.wav')
 
             wf = wave.open(input_file, 'wb')
             wf.setnchannels(1)
@@ -246,12 +256,23 @@ class SpeechSynthesis():
             if DEBUG:print("Length of audio data: ", len(response2.content))
             if DEBUG:print("Status code: ", response2.status_code)
 
-            tts_file = './tmp/' + str(current_time) + '.wav'
+            tts_file = os.path.join(self.TMP_DIR, str(current_time) + '.wav')
+            print(f"[DEBUG SS] 音声合成ファイル作成: {tts_file}")
+            sys.stdout.flush()
             self.trim_wav(input_file, tts_file)
+            
+            # ファイルが実際に存在するか確認
+            if os.path.exists(tts_file):
+                print(f"[DEBUG SS] ファイル確認: {tts_file} (サイズ: {os.path.getsize(tts_file)} bytes)")
+            else:
+                print(f"[ERROR SS] ファイルが作成されませんでした: {tts_file}")
 
             # ここで音声ファイルを再生
             # try:
-            #     playsound(tts_file, True)
+            #     if sys.platform == "darwin":
+            #         os.system(f"afplay '{tts_file}'")
+            #     else:
+            #         playsound(tts_file, True)
             # except Exception as e:
             #     print(f"playsound error: {e}")
 
@@ -271,6 +292,8 @@ class SpeechSynthesis():
             # os.remove(tts_file)
             self.speak_end = True
             self.last_tts_file = tts_file  # 直近の合成ファイル名を記録
+            print(f"[DEBUG SS] last_tts_file設定: {self.last_tts_file}")
+            sys.stdout.flush()
 
             # Unityに口形素列を送信
             # if self.sound_available == False:
@@ -286,7 +309,10 @@ class SpeechSynthesis():
         except Exception as e:
             print('VOICEVOXerror: VOICEVOX sound is not generated. Do you launch VOICEVOX?')
             print(e.args)
-            self.last_tts_file = ""
+            print(f"[DEBUG SS] エラー詳細: {e}")
+            import traceback
+            traceback.print_exc()
+            self.last_tts_file = None
             return None
 
 if __name__ == "__main__":
