@@ -45,6 +45,8 @@
   - [9. macOSネイティブ実行（Apple Silicon GPU活用）](#9-macosネイティブ実行apple-silicon-gpu活用)
     - [9.1 概要](#91-概要)
     - [9.2 クイックセットアップ（Pixiを使用）](#92-クイックセットアップpixiを使用)
+      - [初回セットアップ](#初回セットアップ)
+      - [2回目以降の起動](#2回目以降の起動)
     - [9.3 パフォーマンス比較](#93-パフォーマンス比較)
     - [9.4 環境変数とデバイス選択](#94-環境変数とデバイス選択)
     - [9.5 トラブルシューティング](#95-トラブルシューティング)
@@ -485,7 +487,9 @@ Apple Silicon Mac（M1/M2/M3）では、Metal Performance Shaders（MPS）を使
 
 ### 9.2 クイックセットアップ（Pixiを使用）
 
-#### 必要なツールのインストール
+#### 初回セットアップ
+
+##### 必要なツールのインストール
 ```bash
 # Xcodeコマンドラインツール
 xcode-select --install
@@ -496,9 +500,9 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-#### Pixiを使ったROS2環境のセットアップ（推奨）
+##### Pixiを使ったROS2環境のセットアップ（推奨）
 
-##### 1. Pixiのインストールとプロジェクト作成
+###### 1. Pixiのインストールとプロジェクト作成
 ```bash
 # Pixiのインストール
 curl -fsSL https://pixi.sh/install.sh | bash
@@ -512,7 +516,7 @@ pixi init diaros_workspace -c robostack-humble -c conda-forge
 cd diaros_workspace
 ```
 
-##### 2. ROS2 Humbleとツールのインストール
+###### 2. ROS2 Humbleとツールのインストール
 ```bash
 # Python 3.9を最初に追加（重要）
 pixi add python=3.9
@@ -524,13 +528,13 @@ pixi add ros-humble-desktop colcon-common-extensions pip
 pixi add cython setuptools-scm
 ```
 
-##### 3. DiaROSのクローン
+###### 3. DiaROSのクローン
 ```bash
 cd ~/DiaROS_pixi
 git clone https://github.com/sayonari/DiaROS_imamoto.git
 ```
 
-##### 4. Pixi環境でのPythonパッケージインストール
+###### 4. Pixi環境でのPythonパッケージインストール
 ```bash
 # Pixi環境に入る
 cd ~/DiaROS_pixi/diaros_workspace
@@ -561,9 +565,9 @@ pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 
 **詳細**: 📖 [docs/macos_pixi_ros2_setup.md](docs/macos_pixi_ros2_setup.md)
 
-#### DiaROSのビルドと起動（Pixi環境）
+##### DiaROSのビルドと起動（Pixi環境）
 
-##### 5. ROS2パッケージのビルド
+###### 5. ROS2パッケージのビルド
 ```bash
 # Pixi環境でDiaROSディレクトリに移動
 cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
@@ -595,7 +599,7 @@ export PYTHONPATH=$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPAT
 colcon build --packages-select diaros_package
 ```
 
-##### 6. DiaROS Pythonモジュールのインストール
+###### 6. DiaROS Pythonモジュールのインストール
 ```bash
 # DiaROS_pyディレクトリに移動
 cd ../DiaROS_py
@@ -610,7 +614,7 @@ pip install -e .
 python -c "import diaros; print('DiaROS module imported successfully')"
 ```
 
-##### 7. VOICEVOXの起動（別ターミナル）
+###### 7. VOICEVOXの起動（別ターミナル）
 ```bash
 # VOICEVOXをダウンロード
 cd ~/Downloads
@@ -620,7 +624,7 @@ cd macos-x64
 ./run
 ```
 
-##### 7.5. HuggingFaceトークンの設定（必要な場合）
+###### 7.5. HuggingFaceトークンの設定（必要な場合）
 一部のモデルへのアクセスにはトークンが必要です：
 ```bash
 # HuggingFace CLIでログイン
@@ -631,7 +635,7 @@ huggingface-cli login
 export HF_TOKEN=your_token_here
 ```
 
-##### 8. DiaROSの起動
+###### 8. DiaROSの起動
 ```bash
 # DiaROSディレクトリに移動
 cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
@@ -648,6 +652,35 @@ export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
 cp ../DiaROS_py/diaros/power_calibration.wav .
 
 # DiaROSの起動
+ros2 launch diaros_package sdsmod.launch.py
+```
+
+#### 2回目以降の起動
+
+初回セットアップ完了後は、以下の簡易スクリプトで起動できます：
+
+```bash
+# 簡易起動スクリプトを使用
+./scripts/launch_diaros_macos.sh
+```
+
+または手動で起動する場合：
+
+```bash
+# 1. VOICEVOXを起動（別ターミナル）
+cd ~/Downloads/macos-x64
+./run
+
+# 2. Pixi環境に入ってDiaROSを起動
+cd ~/DiaROS_pixi/diaros_workspace
+pixi shell
+
+# Pixi環境内で以下を実行
+cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+export DIAROS_DEVICE=mps
+export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
+export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
+export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
 ros2 launch diaros_package sdsmod.launch.py
 ```
 
