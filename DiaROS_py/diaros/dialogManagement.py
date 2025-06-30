@@ -407,8 +407,9 @@ class DialogManagement:
                     if DEBUG:sys.stdout.write('\n'+f"1.5秒の無音で応答した時刻{datetime.now()}\n")
                     if DEBUG:sys.stdout.flush()
                     
-                    # ./tmp/ ディレクトリ内の .wav ファイルを名前順にソート
-                    tmp_dir = os.path.abspath('./tmp/')
+                    # DiaROS_ros/tmp ディレクトリ内の .wav ファイルを名前順にソート
+                    current_file_dir = os.path.dirname(os.path.abspath(__file__))
+                    tmp_dir = os.path.abspath(os.path.join(current_file_dir, '../../DiaROS_ros/tmp'))
                     filenames = sorted(glob.glob(os.path.join(tmp_dir, "*.wav")))
 
                     # 名前順で最新のファイル名を取得

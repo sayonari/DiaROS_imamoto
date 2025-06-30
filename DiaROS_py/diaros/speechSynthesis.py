@@ -95,8 +95,14 @@ class SpeechSynthesis():
 
     def __init__(self):
         self.tl = "ja"
-        # 絶対パスを使用
-        self.TMP_DIR = os.path.abspath('./tmp/')
+        # DiaROS_ros内のtmpディレクトリを使用
+        # 現在の作業ディレクトリによらず、DiaROS_rosディレクトリを基準にする
+        import os
+        current_file_dir = os.path.dirname(os.path.abspath(__file__))
+        # DiaROS_py/diaros/ から DiaROS_ros/tmp への相対パス
+        self.TMP_DIR = os.path.abspath(os.path.join(current_file_dir, '../../DiaROS_ros/tmp'))
+        
+        print(f"[DEBUG SS] TMP_DIR設定: {self.TMP_DIR}")
 
         # remove TMP directory & remake ----
         if os.path.exists(self.TMP_DIR):
@@ -104,6 +110,7 @@ class SpeechSynthesis():
             time.sleep(0.3)
 
         os.makedirs(self.TMP_DIR, exist_ok=True)
+        print(f"[DEBUG SS] tmpディレクトリ作成: {self.TMP_DIR}")
 
         self.speak_end = False
         self.last_tts_file = None  # 初期化時にlast_tts_file属性を明示的に設定
@@ -228,6 +235,7 @@ class SpeechSynthesis():
             #Use the current date and time to create a unique file name
             current_time = datetime.now().strftime("%Y%m%d%H%M%S")
             
+            # DiaROS_ros/tmpに保存
             json_file = os.path.join(self.TMP_DIR, str(current_time) + '.json')
             with open(json_file, 'w', encoding='utf-8') as f:
                 json.dump(wrapped_data, f, ensure_ascii=False, indent=4)
@@ -244,6 +252,7 @@ class SpeechSynthesis():
             print(f"[DEBUG SS] VOICEVOX合成レスポンス: status={response2.status_code}, size={len(response2.content)} bytes")
 
             ### jsonファイルが先に作成されるのでjsonファイルが作成された時刻に名前を合わせる
+            # DiaROS_ros/tmpに保存
             input_file = os.path.join(self.TMP_DIR, f'input_{current_time}.wav')
 
             wf = wave.open(input_file, 'wb')
@@ -256,6 +265,7 @@ class SpeechSynthesis():
             if DEBUG:print("Length of audio data: ", len(response2.content))
             if DEBUG:print("Status code: ", response2.status_code)
 
+            # DiaROS_ros/tmpに保存
             tts_file = os.path.join(self.TMP_DIR, str(current_time) + '.wav')
             print(f"[DEBUG SS] 音声合成ファイル作成: {tts_file}")
             sys.stdout.flush()
