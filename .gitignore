@@ -160,3 +160,36 @@ cython_debug/
 #.idea/
 
 /DiaROS/DiaROS_ros/tmp/
+
+# ROS2/colcon specific
+install/
+log/
+# build/ は既に11行目に記載済み
+
+# ROS2 bag files
+*.db3
+*.db3-shm
+*.db3-wal
+
+# Temporary files
+tmp/
+*.tmp
+*.temp
+
+# macOS specific
+.DS_Store
+
+# VSCode
+.vscode/
+
+# 音声合成関連の一時ファイル
+*.wav
+!power_calibration.wav
+!static_response_archive/*.wav
+!static_back_channel_*.wav
+
+# API keys and credentials
+*.key
+*.pem
+credentials.json
+apikey.data
