@@ -10,6 +10,8 @@ from interfaces.msg import Imm
 from diaros.speechSynthesis import SpeechSynthesis
 # from interfaces.msg import Time
 from datetime import datetime
+import signal
+import time
 
 class RosSpeechSynthesis(Node):
     def __init__(self, speechSynthesis):
@@ -66,11 +68,22 @@ def runROS(pub):
     rclpy.spin(pub)
 
 def shutdown():
-    while True:
-        key = input()
-        if key == "kill":
-            print("kill command received.")
-            sys.exit()
+    import signal
+    import time
+    
+    def signal_handler(sig, frame):
+        print("Node graceful shutdown received.")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Node shutdown.")
+        sys.exit(0)
 
 def main(args=None):
     # rcutilsエラーメッセージを抑制

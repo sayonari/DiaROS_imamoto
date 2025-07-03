@@ -22,7 +22,7 @@ class NaturalLanguageGeneration:
         self.user_speak_is_final = False
         self.last_reply = ""  # 生成した対話文をここに格納
         self.words = ["", "", ""]  # 追加: 履歴リスト
-        # 高速応答のためにAPIを優先使用（環境変数でOpenAI APIキーが設定されている場合）
+        # ChatGPT APIを優先使用（環境変数でOpenAI APIキーが設定されている場合）
         self.use_local_model = not bool(os.environ.get("OPENAI_API_KEY"))
 
         sys.stdout.write('NaturalLanguageGeneration  start up.\n')
@@ -163,7 +163,21 @@ class NaturalLanguageGeneration:
                 # sys.stdout.write(f"input:{text_input}\n")
                 # sys.stdout.flush()
                 start_time = datetime.now()
-                role = "優しい性格のアンドロイドとして、相手を労るような返答を２０文字以内でしてください。"
+                # 音声対話システム用の最適化されたプロンプト
+                role = """あなたは音声対話システムです。以下の点を守って応答してください：
+
+1. 雑談対話にふさわしい、手短な1文程度（15-30文字）で応答
+2. 自然で親しみやすい話し方
+3. 相手の発言に対して適切に反応
+4. 長すぎる説明は避ける
+5. 質問には簡潔に答える
+
+例：
+- ユーザー: 「おはよう」→「おはようございます！」
+- ユーザー: 「今日は暑いね」→「本当に暑いですね。」
+- ユーザー: 「明日の天気は？」→「すみません、天気予報は分からないです。」
+
+相手の発言に対して、自然で簡潔な応答をしてください。"""
                 
                 if self.use_local_model:
                     # ローカルモデルを使用
@@ -172,22 +186,44 @@ class NaturalLanguageGeneration:
                     # APIを使用（高速応答最適化）
                     if self.api_type == "openai":
                         try:
-                            # 高速応答のためgpt-3.5-turbo-instruct使用、パラメータ最適化
+                            # ChatGPT-3.5-turbo使用、音声対話向け最適化
                             chat_response = openai.chat.completions.create(
                                 model="gpt-3.5-turbo",
                                 messages=[
-                                    {"role": "system","content": role},
-                                    {"role": "user","content": query},
+                                    {"role": "system", "content": role},
+                                    {"role": "user", "content": f"ユーザーの発言: {query}"}
                                 ],
-                                max_tokens=50,  # 20文字制限のため短く設定
-                                temperature=0.8,
-                                timeout=1.0  # 1秒タイムアウト
+                                max_tokens=60,  # 短めの応答用
+                                temperature=0.7,  # 適度な創造性
+                                top_p=0.9,
+                                frequency_penalty=0.1,
+                                presence_penalty=0.1,
+                                timeout=3.0  # タイムアウトを3秒に延長
                             )
-                            res = chat_response.choices[0].message.content
+                            res = chat_response.choices[0].message.content.strip()
+                            
+                            # 応答が長すぎる場合は最初の文のみ使用
+                            if len(res) > 50:
+                                sentences = res.split('。')
+                                if len(sentences) > 1:
+                                    res = sentences[0] + '。'
+                                else:
+                                    res = res[:50]
+                            
+                            sys.stdout.write(f"[ChatGPT API] 応答生成成功: {res}\n")
+                            
                         except Exception as e:
-                            sys.stdout.write(f"OpenAI API エラー: {e}\\n")
-                            # フォールバック：短い固定応答
-                            res = "そうですね。"
+                            sys.stdout.write(f"[ERROR] ChatGPT API エラー: {e}\n")
+                            # フォールバック：文脈に応じた固定応答
+                            fallback_responses = [
+                                "そうですね。",
+                                "なるほど。", 
+                                "はい、分かりました。",
+                                "ありがとうございます。"
+                            ]
+                            import random
+                            res = random.choice(fallback_responses)
+                            sys.stdout.write(f"[FALLBACK] 固定応答使用: {res}\n")
                     else:
                         # その他のAPI（将来的にClaude等）
                         res = "申し訳ございません。"
@@ -197,10 +233,10 @@ class NaturalLanguageGeneration:
                 response_time_sec = elapsed_time.total_seconds()
                 sys.stdout.write(f"time: {response_time_sec}秒\n")
                 
-                # 1.5秒を超える場合は警告
-                if response_time_sec > 1.5:
-                    sys.stdout.write(f"⚠️ 警告: 応答時間が1.5秒を超えました ({response_time_sec:.3f}秒)\n")
-                    sys.stdout.write("対話リズムが破綻する可能性があります。APIまたはローカルモデルの最適化が必要です。\n")
+                # 2.0秒を超える場合は警告（API使用時の調整）
+                if response_time_sec > 2.0:
+                    sys.stdout.write(f"⚠️ 警告: 応答時間が2.0秒を超えました ({response_time_sec:.3f}秒)\n")
+                    sys.stdout.write("対話リズムが遅くなっています。API応答の最適化が必要です。\n")
                 sys.stdout.flush()
                 if ":" in res:
                     res = res.split(":", 1)[1]

@@ -487,8 +487,21 @@ class DialogManagement:
 
     # 応答・相槌が切り替わらなくとも対話管理をさせる            
     def pubDM(self):
+        # より積極的な応答生成: asr_historyに十分なデータがあれば応答を生成
+        should_respond = False
+        
         if self.response_update is True:
+            should_respond = True
             self.response_update = False
+        elif len(self.asr_history) > 0 and len(self.asr_history[-1]) > 5:  # 最新のASR結果が5文字以上
+            # 過去30秒以内に応答していない場合は応答を生成
+            now = datetime.now()
+            time_since_last_response = now - self.prev_response_time
+            if time_since_last_response >= timedelta(seconds=2.0):  # 2秒以上経過していれば応答
+                should_respond = True
+                sys.stdout.write(f"[DEBUG DM] 自動応答判定: {time_since_last_response.total_seconds()}秒経過\n")
+        
+        if should_respond:
             # 最新から25個ずつ遡る（例: -1, -26, -51, ...）
             words = []
             n = len(self.asr_history)
@@ -498,6 +511,11 @@ class DialogManagement:
                     words.append(self.asr_history[idx])
                     idx -= 25
                 words.reverse()  # 古いもの→新しいもの
+            
+            # 現在のwordも含める（即座応答用）
+            if self.word and self.word not in words:
+                words.append(self.word)
+                
             sys.stdout.write(f"[pubDM] 送信する音声認識履歴リスト: {words}\n")
             sys.stdout.flush()
             return { "words": words, "update": True}

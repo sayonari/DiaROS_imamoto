@@ -6,6 +6,8 @@ from interfaces.msg import Iasr
 from interfaces.msg import Imm
 from rclpy.node import Node
 from rclpy.logging import set_logger_level
+import signal
+import time
 
 """
 言語理解モジュールを組み込む場合利用する
@@ -38,11 +40,22 @@ def runROS(pub):
     rclpy.spin(pub)
 
 def shutdown():
-    while True:
-        key = input()
-        if key == "kill":
-            print("kill command received.")
-            sys.exit()
+    import signal
+    import time
+    
+    def signal_handler(sig, frame):
+        print("Node graceful shutdown received.")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Node shutdown.")
+        sys.exit(0)
 
 def main(args=None):
     # rcutilsエラーメッセージを抑制

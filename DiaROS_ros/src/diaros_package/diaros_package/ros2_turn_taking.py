@@ -9,6 +9,8 @@ from std_msgs.msg import Float32MultiArray
 import numpy as np
 from diaros.turnTaking import TurnTaking, push_audio_data, turn_taking_result_queue  # TurnTakingを実行するために読み込み
 from interfaces.msg import Itt
+import signal
+import time
 
 class RosTurnTaking(Node):
     def __init__(self):
@@ -50,11 +52,22 @@ def runTurnTaking():
     TurnTaking()  # ここでモデル実行箇所
 
 def shutdown():
-    while True:
-        key = input()
-        if key == "kill":
-            print("kill command received.")
-            sys.exit()
+    import signal
+    import time
+    
+    def signal_handler(sig, frame):
+        print("Node graceful shutdown received.")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Node shutdown.")
+        sys.exit(0)
 
 def main(args=None):
     # rcutilsエラーメッセージを抑制

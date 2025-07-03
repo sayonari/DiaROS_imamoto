@@ -129,11 +129,21 @@ def runDM(dialogManagement):
     dialogManagement.run()
 
 def shutdown():
-    while True:
-        key = input()
-        if key == "kill":
-            print("kill command received.")
-            sys.exit()
+    import signal
+    
+    def signal_handler(sig, frame):
+        print("Graceful shutdown received.")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Dialog management node shutdown.")
+        sys.exit(0)
 
 def main(args=None):
     # rcutilsエラーメッセージを抑制
