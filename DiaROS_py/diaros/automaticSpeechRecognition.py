@@ -239,6 +239,14 @@ class AutomaticSpeechRecognition:
         self.processor = None
         self.tokenizer = None
         self.new_result = False  # 追加: 新しい認識結果フラグ
+        
+        # 200msポーズ検出用の変数
+        self.last_result_change_time = time.time()
+        self.last_stable_result = ""
+        self.pause_threshold = 0.2  # 200ms
+        self.previous_results = []  # 重なり結果統合用
+        self.max_history = 10  # 過去10回分の結果を保持
+        
         self.model_thread = threading.Thread(target=self.recognition_thread)
         self.model_thread.daemon = True
         self.model_thread.start()
@@ -249,10 +257,75 @@ class AutomaticSpeechRecognition:
         self.audio_queue.put(audio_np)
         self.recv_count += 1
 
+    def remove_tags(self, text):
+        """[無音][雑音]などのタグを除去"""
+        import re
+        return re.sub(r'\[[無雑][音音]\]', '', text).strip()
+
+    def ends_with_silence_tag(self, text):
+        """文末が[無音]または[雑音]タグで終わっているかチェック"""
+        import re
+        return bool(re.search(r'\[[無雑][音音]\]$', text))
+
+    def integrate_overlapping_results(self, new_result):
+        """重なりあり音声認識結果の統合処理"""
+        if not new_result:
+            return ""
+        
+        # 履歴に追加
+        self.previous_results.append(new_result)
+        if len(self.previous_results) > self.max_history:
+            self.previous_results.pop(0)
+        
+        # 最も長い結果を基本とし、共通部分を見つけて統合
+        if len(self.previous_results) >= 2:
+            prev = self.previous_results[-2]
+            curr = self.previous_results[-1]
+            
+            # 共通部分を見つけて統合
+            if len(prev) > 0 and len(curr) > 0:
+                # 前回結果の末尾と今回結果の先頭で重複を検出
+                for i in range(min(len(prev), len(curr)), 0, -1):
+                    if prev[-i:] == curr[:i]:
+                        # 重複部分を除去して結合
+                        integrated = prev + curr[i:]
+                        return integrated
+            
+            # 重複が見つからない場合は現在の結果を返す
+            return curr
+        
+        return new_result
+
+    def check_pause_and_final(self, current_result):
+        """200msポーズ検出とis_final判定"""
+        now = time.time()
+        
+        # タグを除去した結果で比較
+        clean_result = self.remove_tags(current_result)
+        clean_stable = self.remove_tags(self.last_stable_result)
+        
+        # 結果が変化した場合
+        if clean_result != clean_stable:
+            self.last_result_change_time = now
+            self.last_stable_result = current_result
+            self.is_final = False
+        else:
+            # 200ms間結果が安定している場合
+            if now - self.last_result_change_time >= self.pause_threshold:
+                self.is_final = True
+            else:
+                self.is_final = False
+        
+        # [無音][雑音]タグで終わっている場合も発話終了とみなす
+        if self.ends_with_silence_tag(current_result):
+            self.is_final = True
+
     def pubASR(self):
         if self.new_result:
             self.new_result = False
-            return {"you": self.word, "is_final": self.is_final}
+            # タグを除去してから送信
+            clean_word = self.remove_tags(self.word)
+            return {"you": clean_word, "is_final": self.is_final}
         else:
             return None
 
@@ -316,18 +389,19 @@ class AutomaticSpeechRecognition:
                     elapsed_time = now - start_time
                     process_time = int(1000 * (now - last_time))
                     last_time = now
-                    diff = create_diff_list(last_sent, sentence)
+                    
+                    # 新しい統合処理と200msポーズ検出を適用
+                    integrated_sentence = self.integrate_overlapping_results(sentence)
+                    self.check_pause_and_final(integrated_sentence)
+                    
+                    # デバッグ出力（必要に応じて）
+                    diff = create_diff_list(last_sent, integrated_sentence)
                     colored = apply_color_to_diff(diff)
                     output = f'{elapsed_time:7.3f} ({process_time:5d} ms): {colored}'
-                    # if last_sent != sentence:
-                    #     print(output)
-                    # else:
-                    #     sys.stdout.write("\r" + output + " " * 20 + "\r")
-                    #     sys.stdout.flush()
-                    self.word = sentence
-                    self.is_final = True
+                    
+                    self.word = integrated_sentence
                     self.new_result = True  # 追加: 新しい認識結果が得られた
-                    last_sent = sentence
+                    last_sent = integrated_sentence
                 # time.sleep(0.01)  # ループが高速すぎる場合のCPU負荷軽減
         except Exception as e:
             print(f"Error in recognition_thread: {e}")

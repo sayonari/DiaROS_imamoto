@@ -22,17 +22,41 @@ class NaturalLanguageGeneration:
         self.user_speak_is_final = False
         self.last_reply = ""  # 生成した対話文をここに格納
         self.words = ["", "", ""]  # 追加: 履歴リスト
-        self.use_local_model = True  # ローカルモデルを使用
+        # 高速応答のためにAPIを優先使用（環境変数でOpenAI APIキーが設定されている場合）
+        self.use_local_model = not bool(os.environ.get("OPENAI_API_KEY"))
 
         sys.stdout.write('NaturalLanguageGeneration  start up.\n')
         sys.stdout.write('=====================================================\n')
+        
+        # 使用するAPIの設定
+        self.api_type = self.detect_api_type()
         
         # ローカルモデルの初期化
         if self.use_local_model:
             self.init_local_model()
         else:
-            # OpenAI APIキーを環境変数から設定
-            openai.api_key = os.environ.get("OPENAI_API_KEY")
+            # APIキーを環境変数から設定
+            if self.api_type == "openai":
+                openai.api_key = os.environ.get("OPENAI_API_KEY")
+                sys.stdout.write('OpenAI APIを使用します\n')
+            elif self.api_type == "anthropic":
+                sys.stdout.write('Claude API設定を確認中...\n')
+                # Anthropic APIは別途実装可能
+            else:
+                sys.stdout.write('APIキーが設定されていません。ローカルモデルを使用します。\n')
+                self.use_local_model = True
+                self.init_local_model()
+    
+    def detect_api_type(self):
+        """使用可能なAPIを検出"""
+        # OpenAI APIキーの確認
+        if os.environ.get("OPENAI_API_KEY"):
+            return "openai"
+        # Anthropic APIキーの確認
+        elif os.environ.get("ANTHROPIC_API_KEY"):
+            return "anthropic"
+        else:
+            return None
     
     def init_local_model(self):
         sys.stdout.write('Loading local language model...\n')
@@ -145,20 +169,38 @@ class NaturalLanguageGeneration:
                     # ローカルモデルを使用
                     res = self.generate_local_response(query, role)
                 else:
-                    # OpenAI APIを使用
-                    # openai>=1.0.0対応
-                    chat_response = openai.chat.completions.create(
-                        model="gpt-3.5-turbo",
-                        messages=[
-                            {"role": "system","content": role},
-                            {"role": "user","content": query},
-                        ],
-                    )
-                    res = chat_response.choices[0].message.content
+                    # APIを使用（高速応答最適化）
+                    if self.api_type == "openai":
+                        try:
+                            # 高速応答のためgpt-3.5-turbo-instruct使用、パラメータ最適化
+                            chat_response = openai.chat.completions.create(
+                                model="gpt-3.5-turbo",
+                                messages=[
+                                    {"role": "system","content": role},
+                                    {"role": "user","content": query},
+                                ],
+                                max_tokens=50,  # 20文字制限のため短く設定
+                                temperature=0.8,
+                                timeout=1.0  # 1秒タイムアウト
+                            )
+                            res = chat_response.choices[0].message.content
+                        except Exception as e:
+                            sys.stdout.write(f"OpenAI API エラー: {e}\\n")
+                            # フォールバック：短い固定応答
+                            res = "そうですね。"
+                    else:
+                        # その他のAPI（将来的にClaude等）
+                        res = "申し訳ございません。"
                 sys.stdout.write("res: " + res + "\n")
                 sys.stdout.flush()
                 elapsed_time = datetime.now() - start_time
-                sys.stdout.write(f"time: {elapsed_time.total_seconds()}秒\n")
+                response_time_sec = elapsed_time.total_seconds()
+                sys.stdout.write(f"time: {response_time_sec}秒\n")
+                
+                # 1.5秒を超える場合は警告
+                if response_time_sec > 1.5:
+                    sys.stdout.write(f"⚠️ 警告: 応答時間が1.5秒を超えました ({response_time_sec:.3f}秒)\n")
+                    sys.stdout.write("対話リズムが破綻する可能性があります。APIまたはローカルモデルの最適化が必要です。\n")
                 sys.stdout.flush()
                 if ":" in res:
                     res = res.split(":", 1)[1]

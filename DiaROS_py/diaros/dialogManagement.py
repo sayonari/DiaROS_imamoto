@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from playsound import playsound
 import random
 import numpy as np
-import webrtcvad
 import pyaudio
 import queue
 import threading
@@ -163,6 +162,7 @@ class DialogManagement:
                     self.response_update = True
                     self.prev_asr_you = self.asr["you"]
                     sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
+                    sys.stdout.write(f"[DEBUG DM] response_update = True 設定しました\n")
                     sys.stdout.flush()
                 else:
                     self.response_update = False
@@ -524,8 +524,7 @@ class DialogManagement:
         if "filename" in ss and ss["filename"]:
             self.latest_synth_filename = ss["filename"]
             print(f"[DEBUG DM] updateSS - filename受信: {self.latest_synth_filename}")
-        else:
-            print(f"[DEBUG DM] updateSS - filenameなし (ss={ss})")
+        # デバッグログを抑制（filenameが空の場合は正常動作）
         # print(f"[ROS2] {ss['timestamp']}")
         if self.ss["is_speaking"] is True:
             self.speaking_time = datetime.now()

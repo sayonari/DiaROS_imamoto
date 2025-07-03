@@ -2,7 +2,9 @@
 import rclpy
 import threading
 import sys
+import os
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 from std_msgs.msg import Float32MultiArray
 import numpy as np
 from diaros.turnTaking import TurnTaking, push_audio_data, turn_taking_result_queue  # TurnTakingを実行するために読み込み
@@ -55,6 +57,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     rclpy.init(args=args)
     node = RosTurnTaking()
 

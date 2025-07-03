@@ -4,7 +4,9 @@ import rclpy
 import threading
 import sys
 import time
+import os
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 from interfaces.msg import Iasr
 from interfaces.msg import Isa
 from interfaces.msg import Iss
@@ -134,6 +136,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     dm = DialogManagement()
     rclpy.init(args=args)
     rdm = RosDialogManagement(dm)

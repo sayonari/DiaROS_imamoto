@@ -1,7 +1,9 @@
 import rclpy
 import threading
 import sys
+import os
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 from std_msgs.msg import Float32MultiArray
 from interfaces.msg import Iaa, Imm
 from diaros.acousticAnalysis import AcousticAnalysis
@@ -51,6 +53,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     aa = AcousticAnalysis(16000)
     rclpy.init(args=args)
     raa = RosAcousticAnalysis(aa)

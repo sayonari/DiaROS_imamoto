@@ -9,7 +9,11 @@
 import pyaudio
 # import matplotlib.pyplot as plt
 import numpy as np
-import webrtcvad
+import warnings
+# webrtcvad deprecation警告を抑制
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import webrtcvad
 import time
 # from model_turntaking import ModelTurntaking
 import threading

@@ -12,7 +12,11 @@ import time
 
 ### VAD ###
 import queue
-import webrtcvad
+import warnings
+# webrtcvad deprecation警告を抑制
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import webrtcvad
 import librosa
 import pyaudio
 import threading

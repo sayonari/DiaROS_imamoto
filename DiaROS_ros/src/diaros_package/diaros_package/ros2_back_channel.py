@@ -1,9 +1,11 @@
 import rclpy
 import threading
 import sys
+import os
 import numpy as np
 import time
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 from std_msgs.msg import Float32MultiArray
 from interfaces.msg import Ibc  # 追加
 from diaros.backChannel import main as back_channel_main, push_audio_data, back_channel_result_queue
@@ -54,6 +56,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     rclpy.init(args=args)
     node = RosBackChannel()
     ros = threading.Thread(target=runROS, args=(node,))

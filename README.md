@@ -657,19 +657,25 @@ ros2 launch diaros_package sdsmod.launch.py
 
 #### 2回目以降の起動
 
-初回セットアップ完了後は、以下の簡易スクリプトで起動できます：
+初回セットアップ完了後は、統合起動スクリプトで一発起動できます：
 
 ```bash
-# 簡易起動スクリプトを使用
-./scripts/launch_diaros_macos.sh
+# 統合起動スクリプトを使用（推奨）
+./scripts/launch_diaros.sh
 ```
 
-または手動で起動する場合：
+このスクリプトが自動的に行うこと：
+- 🎤 VOICEVOX.appの起動確認・自動起動
+- 🔧 環境変数の自動設定（DIAROS_DEVICE=mps等）
+- 🤖 Pixi環境内でのDiaROS起動
+
+##### 手動起動する場合：
 
 ```bash
 # 1. VOICEVOXを起動（別ターミナル）
-cd ~/Downloads/macos-x64
-./run
+open -a "/Users/sayonari/_data/tools/VOICEVOX/VOICEVOX.app"
+# または CLI版の場合
+# cd ~/Downloads/macos-x64 && ./run
 
 # 2. Pixi環境に入ってDiaROSを起動
 cd ~/DiaROS_pixi/diaros_workspace

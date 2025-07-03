@@ -1,7 +1,9 @@
 import rclpy
 import threading
 import sys
+import os
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 from interfaces.msg import Iasr
 # from interfaces.msg import Isa
 from interfaces.msg import Imm
@@ -46,6 +48,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     rclpy.init(args=args)  # ← ここをノード生成より前に移動
     asr = AutomaticSpeechRecognition()
     rasr = RosAutomaticSpeechRecognition(asr)

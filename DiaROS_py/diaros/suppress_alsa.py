@@ -8,7 +8,19 @@ from contextlib import contextmanager
 
 # ALSAエラーメッセージを抑制
 def suppress_alsa_lib_error_messages():
-    """libasoundのエラーハンドラを無効化してALSAメッセージを抑制"""
+    """プラットフォーム別にALSAエラーメッセージを抑制"""
+    import platform
+    
+    # macOS環境の場合
+    if platform.system() == 'Darwin':
+        # macOSではPyAudio環境変数でALSA警告を抑制
+        os.environ['PYAUDIO_DEBUG'] = '0'
+        os.environ['PULSE_CRASH_ON_ERROR'] = '0'
+        # CoreAudio関連の警告を抑制
+        os.environ['CA_DISABLE_LOGGING'] = '1'
+        return True
+    
+    # Linux環境の場合（従来のコード）
     try:
         # libasound.so.2をロード
         asound = ctypes.cdll.LoadLibrary('libasound.so.2')
@@ -33,7 +45,9 @@ def suppress_alsa_lib_error_messages():
         return True
     except Exception as e:
         # libasoundが見つからない場合や互換性がない場合
-        print(f"Warning: Could not suppress ALSA messages: {e}")
+        # 環境変数によるフォールバック抑制を試行
+        os.environ['ALSA_CARD'] = '0'
+        os.environ['PULSE_RUNTIME_PATH'] = '/dev/null'
         return False
 
 @contextmanager

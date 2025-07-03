@@ -7,7 +7,11 @@
 200ms未満のバッファ && 200ms以上の無音 -> バッファ削除 && フラグを建てる
 """
 import numpy as np
-import webrtcvad
+import warnings
+# webrtcvad deprecation警告を抑制
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    import webrtcvad
 import time
 import queue
 import sys

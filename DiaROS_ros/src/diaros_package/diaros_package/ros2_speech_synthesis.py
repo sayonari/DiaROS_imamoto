@@ -1,7 +1,9 @@
 import rclpy
 import threading
 import sys
+import os
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 from interfaces.msg import Inlg
 from interfaces.msg import Iss
 from interfaces.msg import Imm
@@ -71,6 +73,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     ss = SpeechSynthesis()
     rclpy.init(args=args)
     rss = RosSpeechSynthesis(ss)

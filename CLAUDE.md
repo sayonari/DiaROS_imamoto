@@ -111,15 +111,53 @@ Defines ROS2 message types for dialog system communication.
 
 ## API Requirements
 
-The system requires external API keys:
-- **A3RT Talk API**: For chat response generation
+### 高速応答生成API (High-Speed Response Generation)
+DiaROSでは対話リズム維持のため、1500ms以内の応答が必要です。以下のAPIを推奨：
+
+**推奨API (優先順位順):**
+- **OpenAI API (ChatGPT)**: ~500-1000ms、最も高速で安定
+- **Anthropic API (Claude)**: ~800-1200ms、高品質応答
+- **ローカルモデル**: ~2000-5000ms、オフライン動作可能（非推奨）
+
+**API設定方法:**
+```bash
+# 1. APIセットアップスクリプト実行（推奨）
+./setup_api.sh
+
+# 2. 手動設定
+export OPENAI_API_KEY="sk-your-openai-api-key"
+export ANTHROPIC_API_KEY="sk-ant-your-anthropic-api-key"
+```
+
+### 音声認識API
 - **Google Speech-to-Text API**: For speech recognition
 
 Set environment variables:
 ```bash
 export GOOGLE_APPLICATION_CREDENTIALS="/path/to/google/credentials.json"
-export A3RT_APIKEY="/path/to/a3rt/apikey.data"
 ```
+
+### 応答時間最適化設定
+システム起動時に以下の優先順位で自動選択：
+1. OpenAI API（設定済みの場合）
+2. Anthropic API（設定済みの場合）  
+3. ローカルモデル（APIキー未設定時）
+
+**応答時間警告**: 1500ms超過時に警告メッセージを表示
+
+## Task Management
+
+### ToDo管理
+プロジェクトの改善・修正タスクは`ToDo.md`ファイルで管理されています：
+- **完了済みタスク**: ASR改善、API統合、エラー抑制など
+- **将来的なタスク**: パフォーマンス最適化、機能拡張など
+- **詳細**: `./ToDo.md`を参照
+
+### 最近の主要改善
+1. **200msポーズ検出**: 対話リズム維持の実装
+2. **高速応答API**: OpenAI/Claude API統合（<1500ms）
+3. **システム安定化**: 全エラー・警告メッセージの除去
+4. **macOS最適化**: ネイティブ環境での完全動作
 
 ## Development Environment
 

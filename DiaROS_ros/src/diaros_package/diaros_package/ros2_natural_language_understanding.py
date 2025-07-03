@@ -1,9 +1,11 @@
 import rclpy
 import threading
 import sys
+import os
 from interfaces.msg import Iasr
 from interfaces.msg import Imm
 from rclpy.node import Node
+from rclpy.logging import set_logger_level
 
 """
 言語理解モジュールを組み込む場合利用する
@@ -43,6 +45,10 @@ def shutdown():
             sys.exit()
 
 def main(args=None):
+    # rcutilsエラーメッセージを抑制
+    os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
+    os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    
     nlu = ""
     rclpy.init(args=args)
     rnlu = RosNaturalLanguageUnderstanding(nlu)
