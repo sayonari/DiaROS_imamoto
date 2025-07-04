@@ -34,6 +34,7 @@ class RosNaturalLanguageGeneration(Node):
             self.pub_nlg.publish(nlg_msg)  # ここでNLG生成文をNLGtoSSトピックで送信
             # self.pub_nlg_dr.publish(nlg_msg)  # ← コメントアウト
             self.last_sent_reply = self.naturalLanguageGeneration.last_reply
+            self.get_logger().info(f'[NLG] Published response: {self.last_sent_reply}')
         mm = Imm()
         mm.mod = "nlg"
         # self.pub_mm.publish(mm)

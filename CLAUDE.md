@@ -15,6 +15,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Technical terms can include English when necessary
 - Code comments should also be in Japanese whenever possible
 
+### スクリプト・コマンド実行の厳格なルール / Strict Rules for Script and Command Execution
+**既存のスクリプトやツールを必ず確認・活用すること。** 新規作成前に徹底的な調査が必要です。
+1. **必ず既存実装を探す**: コマンドやスクリプトを実行する前に、同じ機能のものが既に存在しないか十分に確認
+2. **既存ツールを精査**: 見つかった場合は内容を精査し、目的に合致すれば必ずそれを使用
+3. **新規作成は最終手段**: 既存のものがない場合のみ新規作成を検討
+4. **ビルドは必ずビルドスクリプトを使用**: `scripts/build/build_diaros.sh`など既存のビルドスクリプトを使用
+
+### 改行コードの統一 / Line Ending Consistency
+**すべてのシェルスクリプトはLF（Unix形式）で作成すること。**
+- Windowsの改行コード（CRLF）は使用禁止
+- 新規作成時は必ずLFを使用
+- エディタの設定を確認してLFに統一
+
+### パスの汎用性維持 / Path Portability
+**絶対パスは使用禁止。** 公開リポジトリとして配布されるため、汎用性を保つこと。
+- スクリプト内では相対パスを使用
+- 環境依存の絶対パスは避ける
+- ユーザー固有のパスをハードコードしない
+
 ## Essential Commands
 
 ### System Setup and Build

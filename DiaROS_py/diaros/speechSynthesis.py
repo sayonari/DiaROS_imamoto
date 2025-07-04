@@ -151,6 +151,14 @@ class SpeechSynthesis():
         print(f'TTS:{text}')
         sys.stdout.flush()
         tts_file = None
+        
+        # 空のテキストチェック
+        if not text or text.strip() == "":
+            print("[SS WARNING] 空のテキストを受信しました。音声合成をスキップします。")
+            sys.stdout.flush()
+            self.speak_end = True
+            self.last_tts_file = None
+            return None
         try:
             # VOICEVOXパターン
             speaker = 60

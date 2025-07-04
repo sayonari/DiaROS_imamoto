@@ -129,6 +129,8 @@ class DialogManagement:
         self.last_asr_update_time = None  # ASR結果が更新された時刻
         self.response_request_sent = False  # 応答要求を送信済みかどうか
         self.pause_threshold_ms = 200  # ポーズ検出閾値（ミリ秒）
+        self.user_speaking = False  # ユーザが発話中かどうか
+        self.last_significant_asr = ""  # 最後の有意なASR結果
 
     def run(self):
         prev = ""
@@ -192,24 +194,30 @@ class DialogManagement:
                     self.update_asr_history(self.asr["you"], self.asr.get("confidence", 1.0))
                     sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
                     sys.stdout.flush()
-                    # ASR結果が更新されたので時刻を記録し、応答要求フラグをリセット
+                    # ユーザが発話を開始
+                    self.user_speaking = True
                     self.last_asr_update_time = datetime.now()
-                    self.response_request_sent = False
                     self.response_update = False  # 即座の応答生成は行わない
+                    # 有意なASR結果を保存（5文字以上）
+                    if len(self.asr["you"]) >= 5:
+                        self.last_significant_asr = self.asr["you"]
                 else:
                     self.response_update = False
             else:
                 self.response_update = False
                 
             # ポーズ検出による応答生成（200ms以上の無音）
-            if (self.last_asr_update_time is not None and 
+            if (self.user_speaking and  # ユーザが発話中の場合のみ
+                self.last_asr_update_time is not None and 
                 not self.response_request_sent and 
-                self.word and self.word.strip()):  # 空でない場合のみ
+                self.last_significant_asr and self.last_significant_asr.strip()):  # 有意なASR結果がある場合のみ
                 time_since_update = datetime.now() - self.last_asr_update_time
                 if time_since_update >= timedelta(milliseconds=self.pause_threshold_ms):
                     self.response_update = True
                     self.response_request_sent = True
-                    sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求\n")
+                    self.user_speaking = False  # ユーザ発話終了
+                    self.word = self.last_significant_asr  # 最後の有意なASR結果を使用
+                    sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求: '{self.word}'\n")
                     sys.stdout.flush()
 
             # TTデータの判定・再生
@@ -266,12 +274,14 @@ class DialogManagement:
                         self.last_response_time = time.time()  # 応答時刻を記録
                         self.response_request_sent = False  # 応答要求フラグをリセット
                         self.last_asr_update_time = None  # ASR更新時刻もリセット
+                        self.user_speaking = False  # ユーザ発話フラグもリセット
+                        self.last_significant_asr = ""  # 有意なASR結果もクリア
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
                         self.latest_synth_filename = ""
                     else:
-                        sys.stdout.write("[ERROR] 合成音声ファイル名がありません\n")
+                        # sys.stdout.write("[DEBUG] 合成音声ファイル名がまだありません（応答生成待ち）\n")
                         if hasattr(self, 'latest_synth_filename'):
                             pass  # print(f"[DEBUG DM] latest_synth_filename = '{self.latest_synth_filename}'")
                         else:
@@ -311,6 +321,8 @@ class DialogManagement:
                                 self.latest_synth_filename = ""
                                 self.response_request_sent = False
                                 self.last_asr_update_time = None
+                                self.user_speaking = False
+                                self.last_significant_asr = ""
                                 last_response_end_time = time.time() + duration_sec
                                 is_playing_response = True
                                 next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
@@ -331,6 +343,8 @@ class DialogManagement:
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.response_request_sent = False
                                 self.last_asr_update_time = None
+                                self.user_speaking = False
+                                self.last_significant_asr = ""
                                 self.static_response_index += 1
                                 if self.static_response_index >= len(self.static_response_files):
                                     self.static_response_index = 0

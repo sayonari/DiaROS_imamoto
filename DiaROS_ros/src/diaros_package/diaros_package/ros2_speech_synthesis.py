@@ -27,7 +27,13 @@ class RosSpeechSynthesis(Node):
 
     def play(self, nlg):
         text = str(nlg.reply)
-        print(f"[DEBUG ROS2_SS] 音声合成リクエスト: {text}")
+        print(f"[DEBUG ROS2_SS] 音声合成リクエスト: '{text}' (length: {len(text)})")
+        
+        # 空のテキストチェック
+        if not text or text.strip() == "":
+            print("[DEBUG ROS2_SS] 空のテキストを検出。音声合成をスキップします。")
+            return
+            
         wav_path = self.speechSynthesis.run(text)
         print(f"[DEBUG ROS2_SS] 音声合成結果: {wav_path}")
         # 音声合成後、ファイル名をIssでpublish

@@ -134,6 +134,8 @@ class NaturalLanguageGeneration:
             self._warmup_model(warmup_text)
             
             sys.stdout.write(f'Local model {model_name} loaded successfully.\n')
+            sys.stdout.write(f'Model device: {self.device}, Model dtype: {self.model.dtype}\n')
+            sys.stdout.write(f'Tokenizer info: vocab_size={self.tokenizer.vocab_size}, pad_token={self.tokenizer.pad_token}\n')
             sys.stdout.flush()
             
         except Exception as e:
@@ -239,6 +241,10 @@ class NaturalLanguageGeneration:
         # デコード（高速化のため部分的にデコード）
         generated_ids = outputs[0][inputs.shape[-1]:]  # 入力部分を除外
         response = self.tokenizer.decode(generated_ids, skip_special_tokens=True).strip()
+        
+        # デバッグ: 生成結果の詳細
+        sys.stdout.write(f"[NLG LOCAL DEBUG] prompt length: {len(prompt)}, generated_ids: {len(generated_ids)}, raw response: '{response}'\n")
+        sys.stdout.flush()
         
         # 後処理（モデル特有の処理）
         if ":" in response and response.index(":") < 10:
@@ -383,8 +389,15 @@ class NaturalLanguageGeneration:
                     else:
                         # その他のAPI（将来的にClaude等）
                         res = "申し訳ございません。"
-                sys.stdout.write("res: " + res + "\n")
+                # デバッグ: 応答内容の詳細確認
+                sys.stdout.write(f"[NLG DEBUG] query: '{query}' → res: '{res}' (length: {len(res)})\n")
                 sys.stdout.flush()
+                
+                # 空の応答をチェックして、フォールバック応答を使用
+                if not res or res.strip() == "":
+                    sys.stdout.write("[NLG WARNING] 空の応答を検出しました。フォールバック応答を使用します。\n")
+                    res = "はい、そうですね。"
+                    sys.stdout.flush()
                 elapsed_time = datetime.now() - start_time
                 response_time_sec = elapsed_time.total_seconds()
                 response_time_ms = response_time_sec * 1000
