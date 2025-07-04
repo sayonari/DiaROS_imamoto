@@ -14,10 +14,17 @@ OS_TYPE=$(uname -s)
 
 if [[ "$OS_TYPE" == "Darwin" ]]; then
     # macOSの場合、Pixi環境で実行
-    PIXI_DIR="$HOME/DiaROS_pixi/diaros_workspace"
+    # スクリプトの2階層上から相対パスでdiaros_workspaceを探す
+    SCRIPT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    
+    # 現在のプロジェクトが DiaROS_imamoto の場合、その親ディレクトリに diaros_workspace があるはず
+    PARENT_DIR="$(cd "$SCRIPT_ROOT/.." && pwd)"
+    PIXI_DIR="$PARENT_DIR/diaros_workspace"
     
     if [ ! -d "$PIXI_DIR" ]; then
         echo "❌ Pixi環境が見つかりません: $PIXI_DIR"
+        echo "🔍 現在のディレクトリ: $SCRIPT_ROOT"
+        echo "🔍 親ディレクトリ: $PARENT_DIR"
         exit 1
     fi
     
@@ -36,7 +43,9 @@ export RCUTILS_LOGGING_SEVERITY_THRESHOLD='ERROR'
 export RCUTILS_COLORIZED_OUTPUT='0'
 
 # DiaROSパッケージのパス設定
-DIAROS_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# TEMP_SCRIPT内では、pixi run bash -c から実行されるため、
+# $0 が一時スクリプトを指すことに注意
+DIAROS_ROOT="__DIAROS_ROOT__"
 DIAROS_ROS_DIR="$DIAROS_ROOT/DiaROS_ros"
 
 # インストール済みパッケージの設定
@@ -54,9 +63,13 @@ EOF
     
     chmod +x "$TEMP_SCRIPT"
     
+    # DIAROS_ROOTを一時スクリプトに置換
+    sed -i.bak "s|__DIAROS_ROOT__|$SCRIPT_ROOT|g" "$TEMP_SCRIPT"
+    rm -f "$TEMP_SCRIPT.bak"
+    
     # Pixi環境で実行
     cd "$PIXI_DIR"
-    pixi run bash -c "cd '$SCRIPT_DIR/..' && '$TEMP_SCRIPT'"
+    pixi run bash "$TEMP_SCRIPT"
     
     # 一時ファイルを削除
     rm -f "$TEMP_SCRIPT"
@@ -74,7 +87,8 @@ else
     fi
     
     # DiaROSパッケージの設定
-    DIAROS_ROS_DIR="$SCRIPT_DIR/../DiaROS_ros"
+    DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+    DIAROS_ROS_DIR="$DIAROS_ROOT/DiaROS_ros"
     if [ -f "$DIAROS_ROS_DIR/install/local_setup.bash" ]; then
         source "$DIAROS_ROS_DIR/install/local_setup.bash"
     fi
@@ -82,8 +96,8 @@ else
     # 環境変数の設定
     export RCUTILS_LOGGING_SEVERITY_THRESHOLD='ERROR'
     export RCUTILS_COLORIZED_OUTPUT='0'
-    export PYTHONPATH="$SCRIPT_DIR/../DiaROS_py:$PYTHONPATH"
+    export PYTHONPATH="$DIAROS_ROOT/DiaROS_py:$PYTHONPATH"
     
     # デバッグツールの実行
-    python3 "$SCRIPT_DIR/debug_diaros_flow.py"
+    python3 "$DIAROS_ROOT/scripts/debug_diaros_flow.py"
 fi

@@ -234,6 +234,26 @@ pip install -e .
 
 ### 3.5 ROSパッケージのビルド
 
+#### 自動ビルドスクリプトを使用（推奨）
+
+DiaROSには統合ビルドスクリプトが含まれています：
+
+```bash
+# 通常ビルド
+./scripts/build_diaros.sh
+
+# クリーンビルド（既存のビルドを削除してから再ビルド）
+./scripts/build_diaros.sh clean
+```
+
+このスクリプトは以下を自動的に実行します：
+- インターフェースのビルド
+- DiaROSパッケージのビルド
+- Pythonモジュールのインストール
+- ビルド結果の確認
+
+#### 手動ビルド
+
 ```bash
 # colconのインストール
 sudo apt install python3-colcon-common-extensions
@@ -271,8 +291,12 @@ python3 scripts/test/test_audio_simple.py
 
 # 音声対話システムの実行
 ros2 launch diaros_package sdsmod.launch.py
+
 # またはクイック起動スクリプトを使用（推奨）
 ./scripts/launch/launch_diaros.sh
+
+# rcutilsエラーを抑制した静音版（新機能）
+./scripts/launch/launch_diaros_quiet.sh
 ```
 
 ### 4.2 システムの停止
@@ -588,6 +612,17 @@ pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 ##### DiaROSのビルドと起動（Pixi環境）
 
 ###### 5. ROS2パッケージのビルド
+
+**自動ビルドスクリプトを使用（推奨）:**
+```bash
+# Pixi環境に入った状態で実行
+./scripts/build_diaros.sh
+
+# またはクリーンビルド
+./scripts/build_diaros.sh clean
+```
+
+**手動ビルドの場合:**
 ```bash
 # Pixi環境でDiaROSディレクトリに移動
 cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
@@ -682,12 +717,16 @@ ros2 launch diaros_package sdsmod.launch.py
 ```bash
 # 統合起動スクリプトを使用（推奨）
 ./scripts/launch/launch_diaros.sh
+
+# rcutilsエラーを抑制した静音版
+./scripts/launch/launch_diaros_quiet.sh
 ```
 
-このスクリプトが自動的に行うこと：
+これらのスクリプトが自動的に行うこと：
 - 🎤 VOICEVOX.appの起動確認・自動起動
 - 🔧 環境変数の自動設定（DIAROS_DEVICE=mps等）
 - 🤖 Pixi環境内でのDiaROS起動
+- 🔇 静音版はrcutilsのtruncatedエラーを抑制
 
 ##### 手動起動する場合：
 

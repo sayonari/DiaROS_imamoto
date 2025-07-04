@@ -84,7 +84,7 @@ class RosDialogManagement(Node):
         words = pub_dm_return['words']
         dm_result_update = pub_dm_return['update']
 
-        if dm_result_update is True:
+        if dm_result_update is True and words:
             dm.words = words
         else:
             dm.words = ["", "", ""]

@@ -168,7 +168,7 @@ class DialogManagement:
         standard_power = 0.0
         power_calibration = True
 
-        DEBUG = True
+        DEBUG = False
 
 
         BAR_MEM = 20  # バーの長さ
@@ -188,9 +188,9 @@ class DialogManagement:
                     self.prev_asr_you = self.asr["you"]
                     # ASR履歴に追加
                     self.update_asr_history(self.asr["you"], self.asr.get("confidence", 1.0))
-                    sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
-                    sys.stdout.write(f"[DEBUG DM] response_update = True 設定しました\n")
-                    sys.stdout.flush()
+                    # sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
+                    # sys.stdout.write(f"[DEBUG DM] response_update = True 設定しました\n")
+                    # sys.stdout.flush()
                 else:
                     self.response_update = False
             else:
@@ -255,9 +255,9 @@ class DialogManagement:
                     else:
                         sys.stdout.write("[ERROR] 合成音声ファイル名がありません\n")
                         if hasattr(self, 'latest_synth_filename'):
-                            print(f"[DEBUG DM] latest_synth_filename = '{self.latest_synth_filename}'")
+                            pass  # print(f"[DEBUG DM] latest_synth_filename = '{self.latest_synth_filename}'")
                         else:
-                            print("[DEBUG DM] latest_synth_filename属性が存在しません")
+                            pass  # print("[DEBUG DM] latest_synth_filename属性が存在しません")
                 else:
                     self.response_update = False
                 last_handled_tt_time = tt_time
@@ -527,7 +527,7 @@ class DialogManagement:
             time_since_last_response = now - self.prev_response_time
             if time_since_last_response >= timedelta(seconds=2.0):  # 2秒以上経過していれば応答
                 should_respond = True
-                sys.stdout.write(f"[DEBUG DM] 自動応答判定: {time_since_last_response.total_seconds()}秒経過\n")
+                # sys.stdout.write(f"[DEBUG DM] 自動応答判定: {time_since_last_response.total_seconds()}秒経過\n")
         
         if should_respond:
             # 最新から25個ずつ遡る（例: -1, -26, -51, ...）
@@ -544,8 +544,8 @@ class DialogManagement:
             if self.word and self.word not in words:
                 words.append(self.word)
                 
-            sys.stdout.write(f"[pubDM] 送信する音声認識履歴リスト: {words}\n")
-            sys.stdout.flush()
+            # sys.stdout.write(f"[pubDM] 送信する音声認識履歴リスト: {words}\n")
+            # sys.stdout.flush()
             return { "words": words, "update": True}
         else:
             return { "words": [], "update": False}
@@ -569,7 +569,7 @@ class DialogManagement:
         # 追加: 音声合成ファイル名を受信したらTT閾値超え時に再生用に保存
         if "filename" in ss and ss["filename"]:
             self.latest_synth_filename = ss["filename"]
-            print(f"[DEBUG DM] updateSS - filename受信: {self.latest_synth_filename}")
+            # print(f"[DEBUG DM] updateSS - filename受信: {self.latest_synth_filename}")
         # デバッグログを抑制（filenameが空の場合は正常動作）
         # print(f"[ROS2] {ss['timestamp']}")
         if self.ss["is_speaking"] is True:
