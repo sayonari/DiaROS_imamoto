@@ -29,8 +29,8 @@ class NaturalLanguageGeneration:
         # ChatGPT APIを優先使用（環境変数でOpenAI APIキーが設定されている場合）
         self.use_local_model = not bool(os.environ.get("OPENAI_API_KEY"))
 
-        sys.stdout.write('NaturalLanguageGeneration  start up.\n')
-        sys.stdout.write('=====================================================\n')
+        sys.stdout.write('[NLG] NaturalLanguageGeneration start up.\n')
+        sys.stdout.write('[NLG] =====================================================\n')
         
         # 使用するAPIの設定
         self.api_type = self.detect_api_type()

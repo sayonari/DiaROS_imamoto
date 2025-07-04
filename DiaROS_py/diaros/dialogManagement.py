@@ -126,6 +126,9 @@ class DialogManagement:
         self.latest_synth_filename = None # 追加: 音声合成ファイル名を保存する変数
 
         self.prev_asr_you = ""  # 直前のASR結果をインスタンス変数に
+        self.last_asr_update_time = None  # ASR結果が更新された時刻
+        self.response_request_sent = False  # 応答要求を送信済みかどうか
+        self.pause_threshold_ms = 200  # ポーズ検出閾値（ミリ秒）
 
     def run(self):
         prev = ""
@@ -184,17 +187,30 @@ class DialogManagement:
                 # 直前のASR結果と異なる場合のみ判定（閾値を3文字に下げる）
                 if changed_chars >= 3 and self.asr["you"] != self.prev_asr_you:
                     self.word = self.asr["you"]
-                    self.response_update = True
                     self.prev_asr_you = self.asr["you"]
                     # ASR履歴に追加
                     self.update_asr_history(self.asr["you"], self.asr.get("confidence", 1.0))
                     sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
-                    # sys.stdout.write(f"[DEBUG DM] response_update = True 設定しました\n")
                     sys.stdout.flush()
+                    # ASR結果が更新されたので時刻を記録し、応答要求フラグをリセット
+                    self.last_asr_update_time = datetime.now()
+                    self.response_request_sent = False
+                    self.response_update = False  # 即座の応答生成は行わない
                 else:
                     self.response_update = False
             else:
                 self.response_update = False
+                
+            # ポーズ検出による応答生成（200ms以上の無音）
+            if (self.last_asr_update_time is not None and 
+                not self.response_request_sent and 
+                self.word and self.word.strip()):  # 空でない場合のみ
+                time_since_update = datetime.now() - self.last_asr_update_time
+                if time_since_update >= timedelta(milliseconds=self.pause_threshold_ms):
+                    self.response_update = True
+                    self.response_request_sent = True
+                    sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求\n")
+                    sys.stdout.flush()
 
             # TTデータの判定・再生
             if self.latest_tt_data is not None and self.latest_tt_time != last_handled_tt_time:
@@ -248,6 +264,8 @@ class DialogManagement:
                             sys.stdout.flush()
                         self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                         self.last_response_time = time.time()  # 応答時刻を記録
+                        self.response_request_sent = False  # 応答要求フラグをリセット
+                        self.last_asr_update_time = None  # ASR更新時刻もリセット
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
@@ -291,6 +309,8 @@ class DialogManagement:
                                     playsound(wav_path, True)
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.latest_synth_filename = ""
+                                self.response_request_sent = False
+                                self.last_asr_update_time = None
                                 last_response_end_time = time.time() + duration_sec
                                 is_playing_response = True
                                 next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
@@ -309,6 +329,8 @@ class DialogManagement:
                                 else:
                                     playsound(wav_path, True)
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
+                                self.response_request_sent = False
+                                self.last_asr_update_time = None
                                 self.static_response_index += 1
                                 if self.static_response_index >= len(self.static_response_files):
                                     self.static_response_index = 0
@@ -515,39 +537,21 @@ class DialogManagement:
 
     # 応答・相槌が切り替わらなくとも対話管理をさせる            
     def pubDM(self):
-        # より積極的な応答生成: asr_historyに十分なデータがあれば応答を生成
         should_respond = False
         
         if self.response_update is True:
             should_respond = True
             self.response_update = False
-        elif len(self.asr_history) > 0 and len(self.asr_history[-1]) > 5:  # 最新のASR結果が5文字以上
-            # 過去30秒以内に応答していない場合は応答を生成
-            now = datetime.now()
-            time_since_last_response = now - self.prev_response_time
-            if time_since_last_response >= timedelta(seconds=2.0):  # 2秒以上経過していれば応答
-                should_respond = True
-                # sys.stdout.write(f"[DEBUG DM] 自動応答判定: {time_since_last_response.total_seconds()}秒経過\n")
         
-        if should_respond:
-            # 最新から25個ずつ遡る（例: -1, -26, -51, ...）
-            words = []
-            n = len(self.asr_history)
-            if n > 0:
-                idx = n - 1
-                while idx >= 0:
-                    words.append(self.asr_history[idx])
-                    idx -= 25
-                words.reverse()  # 古いもの→新しいもの
+        if should_respond and self.word and self.word.strip():  # 空でない場合のみ応答生成
+            # 現在のwordのみを送信（シンプルな応答のため）
+            words = [self.word]
             
-            # 現在のwordも含める（即座応答用）
-            if self.word and self.word not in words:
-                words.append(self.word)
-                
-            # sys.stdout.write(f"[pubDM] 送信する音声認識履歴リスト: {words}\n")
-            # sys.stdout.flush()
+            sys.stdout.write(f"[DM→NLG] 応答生成要求: {words}\n")
+            sys.stdout.flush()
             return { "words": words, "update": True}
         else:
+            # 空の要求は送信しない
             return { "words": [], "update": False}
 
     def updateASR(self, asr):

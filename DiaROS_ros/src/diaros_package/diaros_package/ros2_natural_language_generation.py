@@ -23,6 +23,7 @@ class RosNaturalLanguageGeneration(Node):
     def dm_update(self, msg):
         words = list(msg.words)
         if words:
+            self.get_logger().info(f'[NLG] Received words from DM: {words}')
             self.naturalLanguageGeneration.update(words)
 
     def ping(self):

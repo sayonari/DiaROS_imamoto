@@ -129,8 +129,7 @@ class DiaROSFlowDebugger(Node):
         self.timestamps['dm'] = datetime.now()
         if non_empty_words:
             print(f"\n💭 [DM→NLG] 生成要求: {non_empty_words}")
-        else:
-            print(f"\n💭 [DM→NLG] 空の生成要求")
+        # 空の生成要求は表示しない（ノイズを減らすため）
     
     def nlg_callback(self, msg):
         """NLGのコールバック"""
@@ -144,7 +143,9 @@ class DiaROSFlowDebugger(Node):
         self.stats['ss_count'] += 1
         self.latest_data['ss'] = f"File: {msg.filename}, Time: {msg.timestamp}"
         self.timestamps['ss'] = datetime.now()
-        print(f"\n🔊 [SS] 音声合成完了: {msg.filename}")
+        # ファイル名が存在する場合のみ表示
+        if msg.filename and msg.filename.strip():
+            print(f"\n🔊 [SS] 音声合成完了: {msg.filename}")
     
     def tt_callback(self, msg):
         """ターンテイキングのコールバック"""
@@ -157,9 +158,10 @@ class DiaROSFlowDebugger(Node):
     def bc_callback(self, msg):
         """バックチャンネルのコールバック"""
         self.stats['bc_count'] += 1
-        self.latest_data['bc'] = f"'{msg.response}'"
+        self.latest_data['bc'] = f"Result: {msg.result}, Confidence: {msg.confidence:.3f}"
         self.timestamps['bc'] = datetime.now()
-        print(f"\n😊 [BC] 相槌: '{msg.response}'")
+        if msg.confidence > 0.6:  # 相槌の閾値
+            print(f"\n😊 [BC] 相槌判定: confidence={msg.confidence:.3f}")
     
     def display_status(self):
         """定期的にステータスを表示"""
