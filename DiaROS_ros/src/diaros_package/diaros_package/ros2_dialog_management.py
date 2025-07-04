@@ -83,6 +83,11 @@ class RosDialogManagement(Node):
         words = pub_dm_return['words']
         dm_result_update = pub_dm_return['update']
 
+        # デバッグログ追加
+        if dm_result_update or (words and len(words) > 0):
+            print(f"[DEBUG ros2_dm] update={dm_result_update}, words={words}")
+            sys.stdout.flush()
+
         # updateフラグがTrueかつwordsが空でない場合のみ送信
         if dm_result_update is True and words and any(w and w.strip() for w in words):
             dm = Idm()
@@ -96,9 +101,8 @@ class RosDialogManagement(Node):
             # 最終チェック：空の文字列のみのリストは送信しない
             if any(w.strip() for w in dm.words):
                 self.pub_dm.publish(dm)
-                # デバッグ出力（必要時のみ）
-                # print(f"[DM publish] {dm.words}")
-                # sys.stdout.flush()
+                print(f"[ros2_dm] Published to NLG: {dm.words}")
+                sys.stdout.flush()
         # else:
         #     # 空のメッセージは送信しない（ログも出力しない）
         #     pass

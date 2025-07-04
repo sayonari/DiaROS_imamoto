@@ -67,9 +67,14 @@ class DiaROSFlowDebugger(Node):
             Iaa, 'AAtoDM', 
             lambda msg: self.aa_callback(msg), 10)
         
-        # 音声認識
+        # 音声認識 (ASR→NLU→DMの流れ)
         self.sub_asr = self.create_subscription(
-            Iasr, 'ASRtoDM', 
+            Iasr, 'ASRtoNLU', 
+            lambda msg: self.asr_callback(msg), 10)
+        
+        # NLUからDMへの音声認識結果
+        self.sub_nlu_to_dm = self.create_subscription(
+            Iasr, 'NLUtoDM', 
             lambda msg: self.asr_callback(msg), 10)
         
         # 対話管理からNLG
@@ -77,9 +82,9 @@ class DiaROSFlowDebugger(Node):
             Idm, 'DMtoNLG', 
             lambda msg: self.dm_to_nlg_callback(msg), 10)
         
-        # NLGから対話管理
+        # NLGから音声合成へ
         self.sub_nlg = self.create_subscription(
-            Inlg, 'NLGtoDM', 
+            Inlg, 'NLGtoSS', 
             lambda msg: self.nlg_callback(msg), 10)
         
         # 音声合成
@@ -134,9 +139,9 @@ class DiaROSFlowDebugger(Node):
     def nlg_callback(self, msg):
         """NLGのコールバック"""
         self.stats['nlg_count'] += 1
-        self.latest_data['nlg'] = f"'{msg.response}'"
+        self.latest_data['nlg'] = f"'{msg.reply}'"
         self.timestamps['nlg'] = datetime.now()
-        print(f"\n🤖 [NLG] 応答生成: '{msg.response}'")
+        print(f"\n🤖 [NLG] 応答生成: '{msg.reply}'")
     
     def ss_callback(self, msg):
         """音声合成のコールバック"""

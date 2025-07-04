@@ -22,6 +22,8 @@ class RosNaturalLanguageGeneration(Node):
 
     def dm_update(self, msg):
         words = list(msg.words)
+        print(f"[DEBUG NLG] Received message from DM: {words}")
+        sys.stdout.flush()
         # 空でないwordsのみ処理（空文字列のリストは無視）
         if words and any(w and w.strip() for w in words):
             self.get_logger().info(f'[NLG] Received words from DM: {words}')
