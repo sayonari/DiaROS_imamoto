@@ -166,6 +166,12 @@ install/
 log/
 # build/ は既に11行目に記載済み
 
+# ROSビルド生成物を明示的に除外
+DiaROS_ros/build/
+DiaROS_ros/install/
+DiaROS_ros/log/
+DiaROS_ros/.colcon_install_layout
+
 # ROS2 bag files
 *.db3
 *.db3-shm
