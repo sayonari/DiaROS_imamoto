@@ -213,12 +213,16 @@ class DialogManagement:
                 self.last_significant_asr and self.last_significant_asr.strip()):  # 有意なASR結果がある場合のみ
                 time_since_update = datetime.now() - self.last_asr_update_time
                 if time_since_update >= timedelta(milliseconds=self.pause_threshold_ms):
-                    self.response_update = True
-                    self.response_request_sent = True
-                    self.user_speaking = False  # ユーザ発話終了
-                    self.word = self.last_significant_asr  # 最後の有意なASR結果を使用
-                    sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求: '{self.word}'\n")
-                    sys.stdout.flush()
+                    # wordが空でないことを再度確認
+                    if self.last_significant_asr and self.last_significant_asr.strip():
+                        self.response_update = True
+                        self.response_request_sent = True
+                        self.user_speaking = False  # ユーザ発話終了
+                        self.word = self.last_significant_asr  # 最後の有意なASR結果を使用
+                        sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求: '{self.word}'\n")
+                        sys.stdout.flush()
+                    else:
+                        self.response_update = False
 
             # TTデータの判定・再生
             if self.latest_tt_data is not None and self.latest_tt_time != last_handled_tt_time:
@@ -557,7 +561,8 @@ class DialogManagement:
             should_respond = True
             self.response_update = False
         
-        if should_respond and self.word and self.word.strip():  # 空でない場合のみ応答生成
+        # wordが空でないかつstripした後も空でない場合のみ応答生成
+        if should_respond and self.word and self.word.strip():
             # 現在のwordのみを送信（シンプルな応答のため）
             words = [self.word]
             
@@ -565,7 +570,7 @@ class DialogManagement:
             sys.stdout.flush()
             return { "words": words, "update": True}
         else:
-            # 空の要求は送信しない
+            # 空の要求は送信しない（updateもFalseにする）
             return { "words": [], "update": False}
 
     def updateASR(self, asr):

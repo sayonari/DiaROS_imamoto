@@ -92,12 +92,15 @@ class RosDialogManagement(Node):
             else:
                 # 文字列でない要素がある場合は文字列に変換
                 dm.words = [str(w) if w is not None else "" for w in words]
-            self.pub_dm.publish(dm)
-            # デバッグ出力
-            # print(f"[DM publish] {dm.words}")
-            # sys.stdout.flush()
+            
+            # 最終チェック：空の文字列のみのリストは送信しない
+            if any(w.strip() for w in dm.words):
+                self.pub_dm.publish(dm)
+                # デバッグ出力（必要時のみ）
+                # print(f"[DM publish] {dm.words}")
+                # sys.stdout.flush()
         # else:
-        #     # 空のメッセージは送信しない
+        #     # 空のメッセージは送信しない（ログも出力しない）
         #     pass
 
     def aa_update(self, msg):
