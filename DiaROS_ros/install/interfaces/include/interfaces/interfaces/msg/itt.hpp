@@ -7,6 +7,5 @@
 #include "interfaces/msg/detail/itt__struct.hpp"
 #include "interfaces/msg/detail/itt__builder.hpp"
 #include "interfaces/msg/detail/itt__traits.hpp"
-#include "interfaces/msg/detail/itt__type_support.hpp"
 
 #endif  // INTERFACES__MSG__ITT_HPP_

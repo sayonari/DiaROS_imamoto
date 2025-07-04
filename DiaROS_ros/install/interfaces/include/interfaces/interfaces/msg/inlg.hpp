@@ -7,6 +7,5 @@
 #include "interfaces/msg/detail/inlg__struct.hpp"
 #include "interfaces/msg/detail/inlg__builder.hpp"
 #include "interfaces/msg/detail/inlg__traits.hpp"
-#include "interfaces/msg/detail/inlg__type_support.hpp"
 
 #endif  // INTERFACES__MSG__INLG_HPP_

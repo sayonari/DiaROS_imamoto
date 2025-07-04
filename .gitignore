@@ -178,6 +178,22 @@ tmp/
 
 # macOS specific
 .DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
 # VSCode
 .vscode/
@@ -187,6 +203,9 @@ tmp/
 !power_calibration.wav
 !static_response_archive/*.wav
 !static_back_channel_*.wav
+!sound/*.wav
+*.raw
+!sound/*.raw
 
 # API keys and credentials
 *.key

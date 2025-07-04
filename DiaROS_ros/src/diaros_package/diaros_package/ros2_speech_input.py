@@ -51,9 +51,10 @@ def runSpeechInput():
     try:
         while True:
             # SpeechInputは内部でマイク監視ループを持つため何もしない
-            pass
+            time.sleep(0.1)
     except KeyboardInterrupt:
-        pass
+        sys.stdout.write("[ros2_speech_input] SpeechInput thread interrupted\n")
+        sys.exit(0)
 
 def shutdown():
     import signal

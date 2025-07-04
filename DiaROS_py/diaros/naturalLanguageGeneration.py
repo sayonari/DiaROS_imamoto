@@ -6,7 +6,11 @@ import sys
 import os
 import time
 from datetime import datetime
-import openai
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+    import openai
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import warnings
@@ -37,7 +41,12 @@ class NaturalLanguageGeneration:
         else:
             # APIキーを環境変数から設定
             if self.api_type == "openai":
-                openai.api_key = os.environ.get("OPENAI_API_KEY")
+                if OpenAI:
+                    # 新しいOpenAI SDK形式
+                    self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+                else:
+                    # 古いopenai形式
+                    openai.api_key = os.environ.get("OPENAI_API_KEY")
                 sys.stdout.write('OpenAI APIを使用します\n')
             elif self.api_type == "anthropic":
                 sys.stdout.write('Claude API設定を確認中...\n')
@@ -187,19 +196,36 @@ class NaturalLanguageGeneration:
                     if self.api_type == "openai":
                         try:
                             # ChatGPT-3.5-turbo使用、音声対話向け最適化
-                            chat_response = openai.chat.completions.create(
-                                model="gpt-3.5-turbo",
-                                messages=[
-                                    {"role": "system", "content": role},
-                                    {"role": "user", "content": f"ユーザーの発言: {query}"}
-                                ],
-                                max_tokens=60,  # 短めの応答用
-                                temperature=0.7,  # 適度な創造性
-                                top_p=0.9,
-                                frequency_penalty=0.1,
-                                presence_penalty=0.1,
-                                timeout=3.0  # タイムアウトを3秒に延長
-                            )
+                            if hasattr(self, 'client') and self.client:
+                                # 新しいOpenAI SDK形式
+                                chat_response = self.client.chat.completions.create(
+                                    model="gpt-3.5-turbo",
+                                    messages=[
+                                        {"role": "system", "content": role},
+                                        {"role": "user", "content": f"ユーザーの発言: {query}"}
+                                    ],
+                                    max_tokens=60,  # 短めの応答用
+                                    temperature=0.7,  # 適度な創造性
+                                    top_p=0.9,
+                                    frequency_penalty=0.1,
+                                    presence_penalty=0.1,
+                                    timeout=3.0  # タイムアウトを3秒に延長
+                                )
+                            else:
+                                # 古いopenai形式
+                                chat_response = openai.chat.completions.create(
+                                    model="gpt-3.5-turbo",
+                                    messages=[
+                                        {"role": "system", "content": role},
+                                        {"role": "user", "content": f"ユーザーの発言: {query}"}
+                                    ],
+                                    max_tokens=60,  # 短めの応答用
+                                    temperature=0.7,  # 適度な創造性
+                                    top_p=0.9,
+                                    frequency_penalty=0.1,
+                                    presence_penalty=0.1,
+                                    timeout=3.0  # タイムアウトを3秒に延長
+                                )
                             res = chat_response.choices[0].message.content.strip()
                             
                             # 応答が長すぎる場合は最初の文のみ使用

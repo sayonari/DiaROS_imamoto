@@ -22,6 +22,15 @@ find_package(ament_cmake REQUIRED)
 # find_package(<dependency> REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+# Python NumPy検出を追加
+find_package(Python3 COMPONENTS Interpreter Development NumPy REQUIRED)
+if(Python3_NumPy_FOUND)
+  message(STATUS "NumPy found: ${Python3_NumPy_INCLUDE_DIRS}")
+  set(Python3_NumPy_INCLUDE_DIRS ${Python3_NumPy_INCLUDE_DIRS})
+else()
+  message(WARNING "NumPy not found, some features may not work correctly")
+endif()
+
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/List.msg"
   "msg/Iasr.msg"

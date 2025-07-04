@@ -38,11 +38,36 @@ class DialogManagement:
     def get_audio_length(self, filename):
         audio = AudioSegment.from_wav(filename)
         return len(audio) / 1000.0  # 長さを秒単位で返す
+    
+    def update_asr_history(self, text, confidence=1.0):
+        """ASR履歴の更新"""
+        if text and text.strip():  # 空でないテキストのみ追加
+            self.asr_history.append({
+                'text': text,
+                'confidence': confidence,
+                'timestamp': time.time()
+            })
+            # 履歴を最新10件に制限
+            if len(self.asr_history) > 10:
+                self.asr_history = self.asr_history[-10:]
+    
+    def should_generate_response(self):
+        """自動応答の判定"""
+        current_time = time.time()
+        if current_time - self.last_response_time >= self.response_interval:
+            if self.asr_history:
+                # 最後のASR結果から2秒以上経過していたら応答生成
+                last_asr_time = self.asr_history[-1]['timestamp']
+                if current_time - last_asr_time >= 2.0:
+                    return True
+        return False
 
     def __init__(self):
         self.word = ""
         self.asr = { "you": "", "is_final": False }
         self.asr_history = []  # 追加: 音声認識履歴
+        self.last_response_time = 0  # 最後の応答時刻
+        self.response_interval = 2.0  # 応答間隔（秒）
         self.user_speak_is_final = False
         self.recognition_result_is_confirmed = False
         self.sa = { "prevgrad" : 0.0,
@@ -161,6 +186,8 @@ class DialogManagement:
                     self.word = self.asr["you"]
                     self.response_update = True
                     self.prev_asr_you = self.asr["you"]
+                    # ASR履歴に追加
+                    self.update_asr_history(self.asr["you"], self.asr.get("confidence", 1.0))
                     sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
                     sys.stdout.write(f"[DEBUG DM] response_update = True 設定しました\n")
                     sys.stdout.flush()
@@ -220,6 +247,7 @@ class DialogManagement:
                             sys.stdout.write(f"[ERROR] 音声再生エラー: {e}\n")
                             sys.stdout.flush()
                         self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
+                        self.last_response_time = time.time()  # 応答時刻を記録
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length

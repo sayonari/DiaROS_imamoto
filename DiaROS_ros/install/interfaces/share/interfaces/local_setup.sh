@@ -2,7 +2,7 @@
 
 # since this file is sourced use either the provided AMENT_CURRENT_PREFIX
 # or fall back to the destination set at configure time
-: ${AMENT_CURRENT_PREFIX:="/workspace/DiaROS_ros/install/interfaces"}
+: ${AMENT_CURRENT_PREFIX:="/Users/sayonari/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros/install/interfaces"}
 if [ ! -d "$AMENT_CURRENT_PREFIX" ]; then
   if [ -z "$COLCON_CURRENT_PREFIX" ]; then
     echo "The compile time prefix path '$AMENT_CURRENT_PREFIX' doesn't " \
@@ -152,7 +152,6 @@ fi
 
 # list all environment hooks of this package
 ament_append_value AMENT_ENVIRONMENT_HOOKS "$AMENT_CURRENT_PREFIX/share/interfaces/environment/ament_prefix_path.sh"
-ament_append_value AMENT_ENVIRONMENT_HOOKS "$AMENT_CURRENT_PREFIX/share/interfaces/environment/library_path.sh"
 ament_append_value AMENT_ENVIRONMENT_HOOKS "$AMENT_CURRENT_PREFIX/share/interfaces/environment/path.sh"
 ament_append_value AMENT_ENVIRONMENT_HOOKS "$AMENT_CURRENT_PREFIX/share/interfaces/environment/pythonpath.sh"
 

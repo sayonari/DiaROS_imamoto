@@ -7,6 +7,5 @@
 #include "interfaces/msg/detail/iaa__struct.hpp"
 #include "interfaces/msg/detail/iaa__builder.hpp"
 #include "interfaces/msg/detail/iaa__traits.hpp"
-#include "interfaces/msg/detail/iaa__type_support.hpp"
 
 #endif  // INTERFACES__MSG__IAA_HPP_

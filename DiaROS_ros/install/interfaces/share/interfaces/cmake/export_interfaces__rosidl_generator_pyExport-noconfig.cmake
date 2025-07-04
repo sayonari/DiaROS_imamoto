@@ -8,12 +8,13 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 # Import target "interfaces::interfaces__rosidl_generator_py" for configuration ""
 set_property(TARGET interfaces::interfaces__rosidl_generator_py APPEND PROPERTY IMPORTED_CONFIGURATIONS NOCONFIG)
 set_target_properties(interfaces::interfaces__rosidl_generator_py PROPERTIES
-  IMPORTED_LOCATION_NOCONFIG "${_IMPORT_PREFIX}/lib/libinterfaces__rosidl_generator_py.so"
-  IMPORTED_SONAME_NOCONFIG "libinterfaces__rosidl_generator_py.so"
+  IMPORTED_LINK_DEPENDENT_LIBRARIES_NOCONFIG "interfaces::interfaces__rosidl_generator_c;interfaces::interfaces__rosidl_typesupport_c"
+  IMPORTED_LOCATION_NOCONFIG "${_IMPORT_PREFIX}/lib/libinterfaces__rosidl_generator_py.dylib"
+  IMPORTED_SONAME_NOCONFIG "@rpath/libinterfaces__rosidl_generator_py.dylib"
   )
 
-list(APPEND _IMPORT_CHECK_TARGETS interfaces::interfaces__rosidl_generator_py )
-list(APPEND _IMPORT_CHECK_FILES_FOR_interfaces::interfaces__rosidl_generator_py "${_IMPORT_PREFIX}/lib/libinterfaces__rosidl_generator_py.so" )
+list(APPEND _cmake_import_check_targets interfaces::interfaces__rosidl_generator_py )
+list(APPEND _cmake_import_check_files_for_interfaces::interfaces__rosidl_generator_py "${_IMPORT_PREFIX}/lib/libinterfaces__rosidl_generator_py.dylib" )
 
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

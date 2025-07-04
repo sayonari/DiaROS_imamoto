@@ -265,14 +265,14 @@ source ./install/local_setup.bash
 
 # （オプション）音声デバイスの設定とテスト
 cd ~/DiaROS
-python3 scripts/set_default_mic.py
+python3 scripts/utils/set_default_mic.py
 # または簡易音声テスト
-python3 scripts/test_audio_simple.py
+python3 scripts/test/test_audio_simple.py
 
 # 音声対話システムの実行
 ros2 launch diaros_package sdsmod.launch.py
-# または設定済みスクリプトを使用（デバイスを設定した場合）
-/path/to/config/launch_diaros_with_mic.sh
+# またはクイック起動スクリプトを使用（推奨）
+./scripts/launch/launch_diaros.sh
 ```
 
 ### 4.2 システムの停止
@@ -287,7 +287,7 @@ DiaROSには専用の統合モニタリングスクリプト`monitor.sh`が用�
 
 ```bash
 # モニタリングツールを起動
-./scripts/monitor.sh
+./scripts/debug/monitor.sh
 ```
 
 このスクリプトは以下の機能を提供します：
@@ -433,9 +433,22 @@ colcon build
 DiaROS/
 ├── DiaROS_py/          # Python音声対話システムモジュール
 ├── DiaROS_ros/         # ROS2パッケージ
-│   ├── interfaces/     # メッセージ型定義
-│   └── diaros_package/ # メインパッケージ
-└── docs/               # ドキュメント
+│   ├── src/
+│   │   ├── interfaces/     # メッセージ型定義
+│   │   └── diaros_package/ # メインパッケージ
+│   └── install/            # ビルド済みパッケージ
+├── scripts/            # ユーティリティスクリプト
+│   ├── launch/         # 起動スクリプト
+│   ├── setup/          # セットアップ・設定スクリプト
+│   ├── test/           # テストスクリプト
+│   ├── debug/          # デバッグ・監視ツール
+│   └── utils/          # その他のユーティリティ
+├── docs/               # ドキュメント
+│   ├── development/    # 開発関連ドキュメント
+│   ├── guides/         # ガイド・チュートリアル
+│   └── api/            # API仕様書
+├── tmp/                # 一時ファイル（音声合成など）
+└── CLAUDE.md           # Claude Code用ガイド
 ```
 
 ### 7.2 主要なROSトピック
@@ -454,16 +467,23 @@ DiaROS/
 
 ### 7.4 音声デバイス管理
 DiaROSには音声デバイスを管理するツールが含まれています：
-- **scripts/set_default_mic.py**: インタラクティブなデバイス設定ツール
+- **scripts/utils/set_default_mic.py**: インタラクティブなデバイス設定ツール
   - 利用可能な音声入力デバイスを一覧表示
   - デバイスの機能をテスト
   - デバイス設定を保存
   - 事前設定済みデバイスで起動するスクリプトを作成
-- **scripts/test_audio_simple.py**: 簡易音声テストスクリプト
+- **scripts/test/test_audio_simple.py**: 簡易音声テストスクリプト
   - PyAudioのデバイス検出を確認
   - リアルタイムで音声レベルを表示
 - **自動デバイス検出**: Docker環境ではPulseAudioデバイスを優先
 - **環境変数**: `AUDIO_DEVICE_INDEX`でデバイスを指定可能
+
+### 7.5 開発・デバッグツール
+プロジェクトには豊富な開発支援ツールが含まれています：
+- **📖 [デバッグツールガイド](docs/development/debug_tools_guide.md)**: 利用可能な全ツールの詳細説明
+- **統合モニタリング**: `./scripts/debug/monitor.sh` - 包括的なシステム監視
+- **対話フローデバッグ**: `./scripts/debug/debug_diaros_flow.sh` - リアルタイム通信監視
+- **応答テスト**: `./scripts/test/test_diaros_response.sh` - システム動作検証
 
 
 ## 8. ライセンスと謝辞
@@ -661,7 +681,7 @@ ros2 launch diaros_package sdsmod.launch.py
 
 ```bash
 # 統合起動スクリプトを使用（推奨）
-./scripts/launch_diaros.sh
+./scripts/launch/launch_diaros.sh
 ```
 
 このスクリプトが自動的に行うこと：
@@ -836,11 +856,15 @@ DiaROSは現在、外部APIなしで完全にローカルで動作しますが�
 ### 10.2 OpenAI API（応答生成）
 1. https://platform.openai.com/ でアカウント作成
 2. APIキーを作成
-3. 環境変数を設定:
+3. セットアップスクリプトで設定（推奨）:
+   ```bash
+   ./scripts/setup/setup_chatgpt_api.sh
+   ```
+   または手動で環境変数を設定:
    ```bash
    export OPENAI_API_KEY="your-api-key-here"
    ```
-4. `naturalLanguageGeneration.py`で`self.use_local_model = False`に変更
+4. DiaROSは自動的にAPIキーを検出し、ChatGPTを使用します
 
 ### 10.3 A3RT Talk API（代替応答生成）
 1. APIキーを取得: https://a3rt.recruit.co.jp/product/talkAPI/

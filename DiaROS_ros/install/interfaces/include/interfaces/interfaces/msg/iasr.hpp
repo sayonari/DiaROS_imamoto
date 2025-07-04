@@ -7,6 +7,5 @@
 #include "interfaces/msg/detail/iasr__struct.hpp"
 #include "interfaces/msg/detail/iasr__builder.hpp"
 #include "interfaces/msg/detail/iasr__traits.hpp"
-#include "interfaces/msg/detail/iasr__type_support.hpp"
 
 #endif  // INTERFACES__MSG__IASR_HPP_

@@ -7,6 +7,5 @@
 #include "interfaces/msg/detail/list__struct.hpp"
 #include "interfaces/msg/detail/list__builder.hpp"
 #include "interfaces/msg/detail/list__traits.hpp"
-#include "interfaces/msg/detail/list__type_support.hpp"
 
 #endif  // INTERFACES__MSG__LIST_HPP_
