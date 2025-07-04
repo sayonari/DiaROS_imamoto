@@ -22,9 +22,13 @@ class RosNaturalLanguageGeneration(Node):
 
     def dm_update(self, msg):
         words = list(msg.words)
-        if words:
+        # 空でないwordsのみ処理（空文字列のリストは無視）
+        if words and any(w and w.strip() for w in words):
             self.get_logger().info(f'[NLG] Received words from DM: {words}')
             self.naturalLanguageGeneration.update(words)
+        # else:
+        #     # 空のメッセージは無視してログ出力しない
+        #     pass
 
     def ping(self):
         # 応答が生成されたらpublish

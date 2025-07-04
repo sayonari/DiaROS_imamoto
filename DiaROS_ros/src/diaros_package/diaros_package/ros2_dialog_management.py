@@ -34,7 +34,7 @@ class RosDialogManagement(Node):
         self.sub_ss = self.create_subscription(Iss, 'SStoDM', self.ss_update, 1)
         self.pub_dm = self.create_publisher(Idm, 'DMtoNLG', 1)
         # self.pub_mm = self.create_publisher(Imm, 'MM', 1)
-        self.timer = self.create_timer(0.001, self.callback)
+        self.timer = self.create_timer(0.01, self.callback)  # 10msごとに変更（1msは過剰）
         self.recv_count = 0  # 受信回数カウンタ追加
         self.prev_recv_time = None  # 前回受信時刻
 
@@ -79,26 +79,26 @@ class RosDialogManagement(Node):
         self.dialogManagement.updateBC(data)  # dialogManagement.py側でupdateBCを実装しておくこと
 
     def callback(self): #  連続して相槌を打てるようにした
-        dm = Idm()
         pub_dm_return = self.dialogManagement.pubDM()
         words = pub_dm_return['words']
         dm_result_update = pub_dm_return['update']
 
-        if dm_result_update is True and words:
+        # updateフラグがTrueかつwordsが空でない場合のみ送信
+        if dm_result_update is True and words and any(w and w.strip() for w in words):
+            dm = Idm()
             # wordsが文字列のリストであることを確認
             if isinstance(words, list) and all(isinstance(w, str) for w in words):
                 dm.words = words
             else:
                 # 文字列でない要素がある場合は文字列に変換
                 dm.words = [str(w) if w is not None else "" for w in words]
-        else:
-            dm.words = ["", "", ""]
-        self.prev_word = words[0] if words else "" #  現状はprev_wordは使っていない
-        #print(dm.words)
-        # ここでpublish内容を標準出力
-        # print(f"[DM publish] {dm.words}")
-        # sys.stdout.flush()
-        self.pub_dm.publish(dm)
+            self.pub_dm.publish(dm)
+            # デバッグ出力
+            # print(f"[DM publish] {dm.words}")
+            # sys.stdout.flush()
+        # else:
+        #     # 空のメッセージは送信しない
+        #     pass
 
     def aa_update(self, msg):
         new = {
