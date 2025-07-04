@@ -85,7 +85,12 @@ class RosDialogManagement(Node):
         dm_result_update = pub_dm_return['update']
 
         if dm_result_update is True and words:
-            dm.words = words
+            # wordsが文字列のリストであることを確認
+            if isinstance(words, list) and all(isinstance(w, str) for w in words):
+                dm.words = words
+            else:
+                # 文字列でない要素がある場合は文字列に変換
+                dm.words = [str(w) if w is not None else "" for w in words]
         else:
             dm.words = ["", "", ""]
         self.prev_word = words[0] if words else "" #  現状はprev_wordは使っていない
@@ -147,8 +152,10 @@ def shutdown():
 
 def main(args=None):
     # rcutilsエラーメッセージを抑制
+    import os
     os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
     os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    os.environ['RCUTILS_CONSOLE_OUTPUT_FORMAT'] = '[{severity}] {message}'
     
     dm = DialogManagement()
     rclpy.init(args=args)

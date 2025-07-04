@@ -181,16 +181,16 @@ class DialogManagement:
                 # 文字単位で差分を計算
                 diff = list(difflib.ndiff(self.prev_asr_you, self.asr["you"]))
                 changed_chars = sum(1 for d in diff if d.startswith('+ ') or d.startswith('- '))
-                # 直前のASR結果と異なる場合のみ判定
-                if changed_chars >= 5 and self.asr["you"] != self.prev_asr_you:
+                # 直前のASR結果と異なる場合のみ判定（閾値を3文字に下げる）
+                if changed_chars >= 3 and self.asr["you"] != self.prev_asr_you:
                     self.word = self.asr["you"]
                     self.response_update = True
                     self.prev_asr_you = self.asr["you"]
                     # ASR履歴に追加
                     self.update_asr_history(self.asr["you"], self.asr.get("confidence", 1.0))
-                    # sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
+                    sys.stdout.write(f"ASR結果: {self.asr['you']}\n")
                     # sys.stdout.write(f"[DEBUG DM] response_update = True 設定しました\n")
-                    # sys.stdout.flush()
+                    sys.stdout.flush()
                 else:
                     self.response_update = False
             else:

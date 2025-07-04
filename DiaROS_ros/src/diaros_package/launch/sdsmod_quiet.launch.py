@@ -24,70 +24,62 @@ def generate_launch_description():
     # Get launch configuration
     mic = LaunchConfiguration('mic')
     
-    # Define nodes
+    # Define nodes without prefix (environment variables are already set)
     speech_input_node = Node(
         package='diaros_package',
         executable='ros2_speech_input',
         name='ros2_speech_input',
         output='screen',
-        condition=IfCondition(mic),
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        condition=IfCondition(mic)
     )
     
     acoustic_analysis_node = Node(
         package='diaros_package',
         executable='ros2_acoustic_analysis',
         name='ros2_acoustic_analysis',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     asr_node = Node(
         package='diaros_package',
         executable='ros2_automatic_speech_recognition',
         name='ros2_automatic_speech_recognition',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     nlu_node = Node(
         package='diaros_package',
         executable='ros2_natural_language_understanding',
         name='ros2_natural_language_understanding',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     dialog_management_node = Node(
         package='diaros_package',
         executable='ros2_dialog_management',
         name='ros2_dialog_management',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     speech_synthesis_node = Node(
         package='diaros_package',
         executable='ros2_speech_synthesis',
         name='ros2_speech_synthesis',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     turn_taking_node = Node(
         package='diaros_package',
         executable='ros2_turn_taking',
         name='ros2_turn_taking',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     back_channel_node = Node(
         package='diaros_package',
         executable='ros2_back_channel',
         name='ros2_back_channel',
-        output='screen',
-        prefix='bash -c "export RCUTILS_LOGGING_SEVERITY_THRESHOLD=ERROR && exec"'
+        output='screen'
     )
     
     # Return launch description

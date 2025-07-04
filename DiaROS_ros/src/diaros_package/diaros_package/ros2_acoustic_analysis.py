@@ -67,8 +67,10 @@ def shutdown():
 
 def main(args=None):
     # rcutilsエラーメッセージを抑制
+    import os
     os.environ['RCUTILS_LOGGING_SEVERITY_THRESHOLD'] = 'ERROR'
     os.environ['RCUTILS_COLORIZED_OUTPUT'] = '0'
+    os.environ['RCUTILS_CONSOLE_OUTPUT_FORMAT'] = '[{severity}] {message}'
     
     aa = AcousticAnalysis(16000)
     rclpy.init(args=args)

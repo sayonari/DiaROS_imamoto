@@ -39,6 +39,7 @@ export ROS_DISTRO=humble
 export ROS_VERSION=2
 export ROS_PYTHON_VERSION=3
 export ROS_LOCALHOST_ONLY=1
+export ROS_DOMAIN_ID=0
 export RCUTILS_LOGGING_SEVERITY_THRESHOLD='ERROR'
 export RCUTILS_COLORIZED_OUTPUT='0'
 
@@ -58,7 +59,7 @@ export PYTHONPATH="$DIAROS_ROS_DIR/install/diaros_package/lib/python3.9/site-pac
 export PYTHONPATH="$DIAROS_ROOT/DiaROS_py:$PYTHONPATH"
 
 # デバッグツールの実行
-python3 "$DIAROS_ROOT/scripts/debug_diaros_flow.py"
+python3 "$DIAROS_ROOT/scripts/debug/debug_diaros_flow.py"
 EOF
     
     chmod +x "$TEMP_SCRIPT"
@@ -94,10 +95,12 @@ else
     fi
     
     # 環境変数の設定
+    export ROS_DOMAIN_ID=0
+    export ROS_LOCALHOST_ONLY=1
     export RCUTILS_LOGGING_SEVERITY_THRESHOLD='ERROR'
     export RCUTILS_COLORIZED_OUTPUT='0'
     export PYTHONPATH="$DIAROS_ROOT/DiaROS_py:$PYTHONPATH"
     
     # デバッグツールの実行
-    python3 "$DIAROS_ROOT/scripts/debug_diaros_flow.py"
+    python3 "$DIAROS_ROOT/scripts/debug/debug_diaros_flow.py"
 fi

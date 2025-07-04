@@ -133,6 +133,8 @@ fi
 
 echo "=== Setting up ROS2 environment ==="
 export DIAROS_DEVICE="$GPU_DEVICE_VAR"
+export ROS_DOMAIN_ID=0
+export ROS_LOCALHOST_ONLY=1
 export AMENT_PREFIX_PATH="$PWD/install/diaros_package:$PWD/install/interfaces:${AMENT_PREFIX_PATH:-}"
 export PYTHONPATH="$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:${PYTHONPATH:-}"
 
@@ -185,8 +187,8 @@ cd "$PIXI_WS"
 echo "📂 Current directory: $(pwd)"
 echo "🚀 Executing temporary script through pixi..."
 
-# Pixi環境で実行
-pixi run bash "$TEMP_SCRIPT"
+# Pixi環境で実行（環境変数を引き継ぐ）
+OPENAI_API_KEY="${OPENAI_API_KEY:-}" ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" pixi run bash "$TEMP_SCRIPT"
 
 # クリーンアップ
 rm -f "$TEMP_SCRIPT" "$TEMP_SCRIPT.bak"

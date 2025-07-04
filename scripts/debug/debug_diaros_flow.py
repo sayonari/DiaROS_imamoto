@@ -121,10 +121,16 @@ class DiaROSFlowDebugger(Node):
     def dm_to_nlg_callback(self, msg):
         """対話管理→NLGのコールバック"""
         self.stats['dm_count'] += 1
-        words = [msg.word1, msg.word2, msg.word3]
-        self.latest_data['dm'] = f"Words: {words}"
+        # Idm.msgはstring[]型のwordsフィールドを持つ
+        words = msg.words if msg.words else []
+        # 空でない要素のみフィルタリング
+        non_empty_words = [w for w in words if w and w.strip()]
+        self.latest_data['dm'] = f"Words: {non_empty_words}"
         self.timestamps['dm'] = datetime.now()
-        print(f"\n💭 [DM→NLG] 生成要求: {words[0]}")
+        if non_empty_words:
+            print(f"\n💭 [DM→NLG] 生成要求: {non_empty_words}")
+        else:
+            print(f"\n💭 [DM→NLG] 空の生成要求")
     
     def nlg_callback(self, msg):
         """NLGのコールバック"""

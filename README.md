@@ -240,10 +240,10 @@ DiaROSには統合ビルドスクリプトが含まれています：
 
 ```bash
 # 通常ビルド
-./scripts/build_diaros.sh
+./scripts/build/build_diaros.sh
 
 # クリーンビルド（既存のビルドを削除してから再ビルド）
-./scripts/build_diaros.sh clean
+./scripts/build/build_diaros.sh clean
 ```
 
 このスクリプトは以下を自動的に実行します：
@@ -274,6 +274,33 @@ source ./install/local_setup.bash
 ## 4. 実行手順
 
 ### 4.1 音声対話システムの起動
+
+#### 起動モードの選択
+
+DiaROSは3つのモードで起動できます：
+
+##### 1. **ローカルLLMモード（デフォルト・推奨）** 🚀
+高速な日本語LLMをローカルで実行します。APIキー不要で、応答時間<500msを目標としています。
+```bash
+./scripts/launch/launch_diaros_local.sh
+# または単に（APIキー未設定時は自動的にローカルモード）
+./scripts/launch/launch_diaros_quiet.sh
+```
+
+##### 2. **ChatGPT APIモード** 🤖
+OpenAI ChatGPT APIを使用します。高品質な応答が得られますが、API料金が発生します。
+```bash
+export OPENAI_API_KEY="sk-your-api-key"
+./scripts/launch/launch_diaros_chatgpt.sh
+```
+
+##### 3. **標準モード（自動選択）**
+APIキーの有無に応じて自動的にモードを選択します。
+```bash
+./scripts/launch/launch_diaros.sh
+```
+
+#### 基本的な起動手順
 ```bash
 # 新しいターミナルで
 cd ~/DiaROS/DiaROS_ros
@@ -285,7 +312,7 @@ source ./install/local_setup.bash
 
 # （オプション）音声デバイスの設定とテスト
 cd ~/DiaROS
-python3 scripts/utils/set_default_mic.py
+python3 scripts/test/set_default_mic.py
 # または簡易音声テスト
 python3 scripts/test/test_audio_simple.py
 
@@ -399,7 +426,7 @@ pactl list short sinks
 ```bash
 # 音声デバイス設定スクリプトを使用
 cd ~/DiaROS
-python3 scripts/set_default_mic.py
+python3 scripts/test/set_default_mic.py
 ```
 
 このスクリプトは以下を実行します：
@@ -462,6 +489,12 @@ DiaROS/
 │   │   └── diaros_package/ # メインパッケージ
 │   └── install/            # ビルド済みパッケージ
 ├── scripts/            # ユーティリティスクリプト
+│   ├── build/          # ビルド関連スクリプト
+│   ├── debug/          # デバッグ・モニタリング
+│   ├── launch/         # 起動スクリプト
+│   ├── setup/          # セットアップ・設定
+│   ├── test/           # テストスクリプト
+│   └── utils/          # その他ユーティリティ
 │   ├── launch/         # 起動スクリプト
 │   ├── setup/          # セットアップ・設定スクリプト
 │   ├── test/           # テストスクリプト
@@ -491,7 +524,7 @@ DiaROS/
 
 ### 7.4 音声デバイス管理
 DiaROSには音声デバイスを管理するツールが含まれています：
-- **scripts/utils/set_default_mic.py**: インタラクティブなデバイス設定ツール
+- **scripts/test/set_default_mic.py**: インタラクティブなデバイス設定ツール
   - 利用可能な音声入力デバイスを一覧表示
   - デバイスの機能をテスト
   - デバイス設定を保存
@@ -508,6 +541,28 @@ DiaROSには音声デバイスを管理するツールが含まれています�
 - **統合モニタリング**: `./scripts/debug/monitor.sh` - 包括的なシステム監視
 - **対話フローデバッグ**: `./scripts/debug/debug_diaros_flow.sh` - リアルタイム通信監視
 - **応答テスト**: `./scripts/test/test_diaros_response.sh` - システム動作検証
+
+#### 個別モジュールのデバッグ
+```bash
+# ASR→DM→NLGの対話フローテスト
+python3 scripts/debug/test_asr_to_dm.py
+
+# NLG応答生成テスト（APIキー設定の確認）
+python3 scripts/debug/test_nlg_response.py
+
+# ターンテイキング判定の監視（閾値0.75以上で応答トリガー）
+python3 scripts/debug/test_turn_taking.py
+
+# DM→NLGフローの詳細テスト
+python3 scripts/debug/test_dm_flow.py
+```
+
+#### トラブルシューティング
+応答が生成されない場合は以下を確認：
+1. APIキーの設定（`echo $OPENAI_API_KEY`）
+2. ASR結果がDMに到達（`ros2 topic echo /NLUtoDM`）
+3. DM→NLGメッセージの送信（`ros2 topic echo /DMtoNLG`）
+4. ターンテイキングconfidence値（閾値0.75以上必要）
 
 
 ## 8. ライセンスと謝辞
@@ -616,10 +671,10 @@ pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 **自動ビルドスクリプトを使用（推奨）:**
 ```bash
 # Pixi環境に入った状態で実行
-./scripts/build_diaros.sh
+./scripts/build/build_diaros.sh
 
 # またはクリーンビルド
-./scripts/build_diaros.sh clean
+./scripts/build/build_diaros.sh clean
 ```
 
 **手動ビルドの場合:**
@@ -897,7 +952,7 @@ DiaROSは現在、外部APIなしで完全にローカルで動作しますが�
 2. APIキーを作成
 3. セットアップスクリプトで設定（推奨）:
    ```bash
-   ./scripts/setup/setup_chatgpt_api.sh
+   ./scripts/setup/setup_api.sh
    ```
    または手動で環境変数を設定:
    ```bash

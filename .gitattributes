@@ -1,0 +1,46 @@
+# Gitの改行コード自動変換設定
+
+# デフォルト設定
+* text=auto
+
+# シェルスクリプトは必ずLFに統一
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Pythonファイルも必ずLFに統一
+*.py text eol=lf
+
+# 設定ファイル
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+
+# Dockerファイル
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+
+# ドキュメント
+*.md text eol=lf
+*.txt text eol=lf
+
+# バイナリファイル
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.flv binary
+*.fla binary
+*.swf binary
+*.gz binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.eot binary
+*.woff binary
+*.pyc binary
+*.pdf binary
