@@ -557,21 +557,24 @@ class DialogManagement:
     def pubDM(self):
         should_respond = False
         
-        # デバッグログ追加
-        sys.stdout.write(f"[DEBUG pubDM] response_update={self.response_update}, word='{self.word}'\n")
-        sys.stdout.flush()
-        
-        if self.response_update is True:
+        # response_updateがTrueかつwordが空でない場合のみ処理
+        if self.response_update is True and self.word and self.word.strip():
             should_respond = True
-            self.response_update = False
-        
-        # wordが空でないかつstripした後も空でない場合のみ応答生成
-        if should_respond and self.word and self.word.strip():
+            
+            # デバッグログ追加
+            sys.stdout.write(f"[DEBUG pubDM] 応答送信: response_update={self.response_update}, word='{self.word}'\n")
+            sys.stdout.flush()
+            
             # 現在のwordのみを送信（シンプルな応答のため）
             words = [self.word]
             
             sys.stdout.write(f"[DM→NLG] 応答生成要求: {words}\n")
             sys.stdout.flush()
+            
+            # フラグをリセット
+            self.response_update = False
+            self.word = ""  # wordもクリア
+            
             return { "words": words, "update": True}
         else:
             # 空の要求は送信しない（updateもFalseにする）
