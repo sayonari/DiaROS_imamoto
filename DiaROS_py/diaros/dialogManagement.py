@@ -558,8 +558,8 @@ class DialogManagement:
         should_respond = False
         
         # デバッグログ追加
-        # sys.stdout.write(f"[DEBUG pubDM] response_update={self.response_update}, word='{self.word}'\n")
-        # sys.stdout.flush()
+        sys.stdout.write(f"[DEBUG pubDM] response_update={self.response_update}, word='{self.word}'\n")
+        sys.stdout.flush()
         
         if self.response_update is True:
             should_respond = True

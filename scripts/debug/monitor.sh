@@ -226,7 +226,7 @@ while true; do
             ;;
         17)
             echo "DiaROS対話フローグラフを生成中..."
-            run_gui_command "rqt_graph --topic-filter '/(mic_audio_float32|AAtoDM|ASRtoNLU|NLUtoDM|DMtoNLG|NLGtoSS|SStoDM|TTtoDM|BCtoDM)/'"
+            run_gui_command "rqt_graph"
             ;;
         18)
             echo "トピック周期を監視します。"
