@@ -31,8 +31,12 @@ run_gui_command() {
     if [ "$is_docker" = true ]; then
         docker exec -it -e DISPLAY=host.docker.internal:0 diaros_container bash -c "source /opt/ros/humble/setup.bash && source /DiaROS_ros/install/local_setup.bash && $1"
     else
-        # Pixi環境で実行（GUI対応）
-        cd "$PIXI_WS" && pixi run bash -c "cd \"$DIAROS_DIR\" && export AMENT_PREFIX_PATH=\"$DIAROS_DIR/install/diaros_package:$DIAROS_DIR/install/interfaces:\${AMENT_PREFIX_PATH:-}\" && export PYTHONPATH=\"$DIAROS_DIR/install/diaros_package/lib/python3.9/site-packages:$DIAROS_DIR/install/interfaces/lib/python3.9/site-packages:\${PYTHONPATH:-}\" && export DYLD_LIBRARY_PATH=\"$DIAROS_DIR/install/interfaces/lib:\${DYLD_LIBRARY_PATH:-}\" && $1"
+        # Pixi環境で実行（GUI対応）- macOSの場合はgraphvizのPATHを追加
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            cd "$PIXI_WS" && pixi run bash -c "cd \"$DIAROS_DIR\" && export PATH=\"/opt/homebrew/bin:\$PATH\" && export AMENT_PREFIX_PATH=\"$DIAROS_DIR/install/diaros_package:$DIAROS_DIR/install/interfaces:\${AMENT_PREFIX_PATH:-}\" && export PYTHONPATH=\"$DIAROS_DIR/install/diaros_package/lib/python3.9/site-packages:$DIAROS_DIR/install/interfaces/lib/python3.9/site-packages:\${PYTHONPATH:-}\" && export DYLD_LIBRARY_PATH=\"$DIAROS_DIR/install/interfaces/lib:\${DYLD_LIBRARY_PATH:-}\" && $1"
+        else
+            cd "$PIXI_WS" && pixi run bash -c "cd \"$DIAROS_DIR\" && export AMENT_PREFIX_PATH=\"$DIAROS_DIR/install/diaros_package:$DIAROS_DIR/install/interfaces:\${AMENT_PREFIX_PATH:-}\" && export PYTHONPATH=\"$DIAROS_DIR/install/diaros_package/lib/python3.9/site-packages:$DIAROS_DIR/install/interfaces/lib/python3.9/site-packages:\${PYTHONPATH:-}\" && export DYLD_LIBRARY_PATH=\"$DIAROS_DIR/install/interfaces/lib:\${DYLD_LIBRARY_PATH:-}\" && $1"
+        fi
     fi
 }
 
