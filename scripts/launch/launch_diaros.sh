@@ -187,8 +187,10 @@ cd "$PIXI_WS"
 echo "📂 Current directory: $(pwd)"
 echo "🚀 Executing temporary script through pixi..."
 
-# Pixi環境で実行（環境変数を引き継ぐ）
-OPENAI_API_KEY="${OPENAI_API_KEY:-}" ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" pixi run bash "$TEMP_SCRIPT"
+# Pixi環境でPythonを明示的に指定して実行（環境変数を引き継ぐ）
+OPENAI_API_KEY="${OPENAI_API_KEY:-}" ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-}" \
+PYTHONEXECUTABLE="$PIXI_WS/.pixi/envs/default/bin/python" \
+pixi run bash "$TEMP_SCRIPT"
 
 # クリーンアップ
 rm -f "$TEMP_SCRIPT" "$TEMP_SCRIPT.bak"
