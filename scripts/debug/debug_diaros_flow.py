@@ -199,7 +199,11 @@ class DiaROSFlowDebugger(Node):
             else:
                 status = '⚫'
             
-            print(f'{icon} {name:10} {status} {data}')
+            # 日本語文字幅を考慮した統一フォーマット
+            # 全角文字は2文字分として計算
+            name_width = sum(2 if ord(c) > 127 else 1 for c in name)
+            padding = 12 - name_width  # 12文字分の幅を確保
+            print(f'{icon} {name}{" " * padding} {status} {data}')
         
         print('-'*70)
         print('統計情報:')

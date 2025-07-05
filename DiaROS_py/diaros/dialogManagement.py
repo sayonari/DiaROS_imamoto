@@ -220,6 +220,7 @@ class DialogManagement:
                         self.user_speaking = False  # ユーザ発話終了
                         self.word = self.last_significant_asr  # 最後の有意なASR結果を使用
                         sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求: '{self.word}'\n")
+                        sys.stdout.write(f"[DEBUG DM] response_update設定: response_update={self.response_update}, word='{self.word}'\n")
                         sys.stdout.flush()
                     else:
                         self.response_update = False
@@ -555,12 +556,18 @@ class DialogManagement:
 
     # 応答・相槌が切り替わらなくとも対話管理をさせる            
     def pubDM(self):
-        should_respond = False
+        # pubDMが呼ばれる度にカウント（デバッグ用）
+        if not hasattr(self, 'pubdm_count'):
+            self.pubdm_count = 0
+        self.pubdm_count += 1
+        
+        # 100回に1回、状態を出力
+        if self.pubdm_count % 100 == 0:
+            sys.stdout.write(f"[DEBUG pubDM] called {self.pubdm_count} times, response_update={self.response_update}, word='{self.word}'\n")
+            sys.stdout.flush()
         
         # response_updateがTrueかつwordが空でない場合のみ処理
         if self.response_update is True and self.word and self.word.strip():
-            should_respond = True
-            
             # デバッグログ追加
             sys.stdout.write(f"[DEBUG pubDM] 応答送信: response_update={self.response_update}, word='{self.word}'\n")
             sys.stdout.flush()
