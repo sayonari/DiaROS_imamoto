@@ -564,13 +564,13 @@ class DialogManagement:
         
         # 100回に1回、状態を出力
         if self.pubdm_count % 100 == 0:
-            sys.stdout.write(f"[DEBUG pubDM] called {self.pubdm_count} times, response_update={self.response_update}, word='{self.word}'\n")
+            sys.stdout.write(f"[DEBUG pubDM] called {self.pubdm_count} times, response_update={self.response_update}, response_request_sent={self.response_request_sent}, word='{self.word}'\n")
             sys.stdout.flush()
         
-        # response_updateがTrueかつwordが空でない場合のみ処理
-        if self.response_update is True and self.word and self.word.strip():
+        # response_request_sentがTrueかつwordが空でない場合のみ処理
+        if self.response_request_sent is True and self.word and self.word.strip():
             # デバッグログ追加
-            sys.stdout.write(f"[DEBUG pubDM] 応答送信: response_update={self.response_update}, word='{self.word}'\n")
+            sys.stdout.write(f"[DEBUG pubDM] 応答送信: response_request_sent={self.response_request_sent}, word='{self.word}'\n")
             sys.stdout.flush()
             
             # 現在のwordのみを送信（シンプルな応答のため）
@@ -580,6 +580,7 @@ class DialogManagement:
             sys.stdout.flush()
             
             # フラグをリセット
+            self.response_request_sent = False
             self.response_update = False
             self.word = ""  # wordもクリア
             
