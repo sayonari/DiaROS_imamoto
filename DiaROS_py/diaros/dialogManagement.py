@@ -292,7 +292,8 @@ class DialogManagement:
                         else:
                             pass  # print("[DEBUG DM] latest_synth_filename属性が存在しません")
                 else:
-                    self.response_update = False
+                    # self.response_update = False  # ← この行が問題！無条件にFalseにしていた
+                    pass
                 last_handled_tt_time = tt_time
             # 応答音声再生終了後にフラグをリセット
             if is_playing_response and last_response_end_time is not None and time.time() >= last_response_end_time:
