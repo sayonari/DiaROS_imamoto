@@ -251,8 +251,13 @@ while true; do
             ;;
         21)
             echo "Plotjugglerを起動します..."
-            echo "注意: plotjuggler-rosがインストールされている必要があります"
-            run_gui_command "if command -v plotjuggler >/dev/null 2>&1; then plotjuggler; else echo 'Plotjugglerがインストールされていません。'; echo 'インストールコマンド: sudo apt install ros-humble-plotjuggler-ros'; fi"
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                echo "❌ PlotjugglerはmacOSでは利用できません。"
+                echo "代替案: rqt_plotを使用してください（選択肢3）"
+            else
+                echo "注意: plotjuggler-rosがインストールされている必要があります"
+                run_gui_command "if command -v plotjuggler >/dev/null 2>&1; then plotjuggler; else echo 'Plotjugglerがインストールされていません。'; echo 'インストールコマンド: sudo apt install ros-humble-plotjuggler-ros'; fi"
+            fi
             ;;
         22)
             echo "性能トレースを開始します。"
