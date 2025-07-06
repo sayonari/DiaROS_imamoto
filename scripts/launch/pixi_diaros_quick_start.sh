@@ -56,7 +56,7 @@ cd "$PIXI_DIR/diaros_workspace"
 # Pixi環境で実行
 pixi shell << 'PIXI_SCRIPT'
 # DiaROSディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # 環境変数の設定
 echo "Setting up environment variables..."

@@ -22,7 +22,9 @@ class NaturalLanguageGeneration:
         
         self.query = ""
         self.update_flag = False
-        self.dialogue_history = []
+        self.dialogue_history = []  # 対話履歴を管理
+        # 環境変数で設定可能（デフォルトは6: ユーザ3発話＋システム3発話）
+        self.max_dialogue_history = int(os.environ.get("DIAROS_MAX_DIALOGUE_HISTORY", "6"))
         self.user_speak_is_final = False
         self.last_reply = ""  # 生成した対話文をここに格納
         self.words = ["", "", ""]  # 追加: 履歴リスト
@@ -31,6 +33,7 @@ class NaturalLanguageGeneration:
 
         sys.stdout.write('[NLG] NaturalLanguageGeneration start up.\n')
         sys.stdout.write('[NLG] =====================================================\n')
+        sys.stdout.write(f'[NLG] 対話履歴最大数: {self.max_dialogue_history}発話\n')
         
         # 使用するAPIの設定
         self.api_type = self.detect_api_type()
@@ -86,7 +89,7 @@ class NaturalLanguageGeneration:
         if model_choice == "rinna-small":
             # rinna/japanese-gpt2-small (最も軽量、最速)
             model_name = "rinna/japanese-gpt2-small"
-            sys.stdout.write('Using rinna/japanese-gpt2-small (fastest, ~100MB)\n')
+            sys.stdout.write('[NLG] モデル: rinna/japanese-gpt2-small (最速)\n')
         elif model_choice == "rinna-neox":
             # rinna/japanese-gpt-neox-small (高品質、やや重い)
             model_name = "rinna/japanese-gpt-neox-small"
@@ -99,22 +102,119 @@ class NaturalLanguageGeneration:
             # line-corporation/japanese-large-lm-1.7b (最高品質、重い)
             model_name = "line-corporation/japanese-large-lm-1.7b"
             sys.stdout.write('Using LINE japanese-large-lm-1.7b (best quality, ~3.4GB)\n')
+        elif model_choice == "gemma-2b":
+            # google/gemma-2-2b-it (Google Gemma 2 2B、高速)
+            model_name = "google/gemma-2-2b-it"
+            sys.stdout.write('Using google/gemma-2-2b-it (Gemma 2, fast, ~5GB)\n')
+        elif model_choice == "gemma-9b":
+            # google/gemma-2-9b-it (Google Gemma 2 9B、高品質)
+            model_name = "google/gemma-2-9b-it"
+            sys.stdout.write('Using google/gemma-2-9b-it (Gemma 2, high quality, ~18GB)\n')
+        elif model_choice == "stablelm-2":
+            # stabilityai/japanese-stablelm-2-instruct-1_6b (Japanese StableLM 2、高速)
+            model_name = "stabilityai/japanese-stablelm-2-instruct-1_6b"
+            sys.stdout.write('[NLG] デフォルトモデル: Japanese StableLM 2 (高速・高品質, ~3.2GB)\n')
+        elif model_choice == "phi-3-mini":
+            # microsoft/Phi-3-mini-4k-instruct (Phi-3-mini、超高速)
+            model_name = "microsoft/Phi-3-mini-4k-instruct"
+            sys.stdout.write('Using Phi-3-mini 4k (ultra-fast, ~7.6GB)\n')
+        elif model_choice == "elyza-7b":
+            # elyza/ELYZA-japanese-Llama-2-7b (ELYZA、高品質日本語特化)
+            model_name = "elyza/ELYZA-japanese-Llama-2-7b"
+            sys.stdout.write('Using ELYZA-japanese-Llama-2-7b (high quality Japanese, ~13GB)\n')
         else:
             # デフォルト
             model_name = "rinna/japanese-gpt2-small"
-            sys.stdout.write(f'Unknown model {model_choice}, using default rinna/japanese-gpt2-small\n')
+            sys.stdout.write(f'[NLG] Unknown model {model_choice}, using default rinna-small\n')
         
         try:
-            # トークナイザーとモデルの読み込み
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+            # HuggingFaceトークンの取得（環境変数またはCLIログインから）
+            hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_TOKEN")
+            if not hf_token:
+                try:
+                    from huggingface_hub import HfFolder
+                    hf_token = HfFolder.get_token()
+                except:
+                    pass
+            
+            # Gemmaモデルの場合は特別な設定が必要
+            if "gemma" in model_name:
+                sys.stdout.write('[NLG] Gemmaモデル用の特別設定を適用中...\n')
+                if not hf_token:
+                    sys.stdout.write('[NLG] 警告: HuggingFaceトークンが見つかりません。\n')
+                    sys.stdout.write('[NLG] huggingface-cli loginを実行するか、export HF_TOKEN=your_tokenを設定してください。\n')
+                else:
+                    sys.stdout.write('[NLG] HuggingFaceトークンを検出しました。\n')
+                
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    model_name,
+                    token=hf_token,
+                    trust_remote_code=True
+                )
+            elif "Phi-3" in model_name:
+                # Phi-3-miniの場合は特別な設定
+                sys.stdout.write('[NLG] Phi-3-mini用の特別設定を適用中...\n')
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    model_name,
+                    trust_remote_code=True,
+                    pad_token='<|endoftext|>'
+                )
+            elif "elyza" in model_name.lower():
+                # ELYZAモデルの場合
+                sys.stdout.write('[NLG] ELYZA-japanese-Llama-2用の設定を適用中...\n')
+                self.tokenizer = AutoTokenizer.from_pretrained(
+                    model_name,
+                    use_fast=False,  # LlamaTokenizerはfastを無効化
+                    legacy=False
+                )
+                if self.tokenizer.pad_token is None:
+                    self.tokenizer.pad_token = self.tokenizer.eos_token
+            else:
+                # 通常のモデル読み込み
+                self.tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
             
             # モデルロード時の最適化
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                torch_dtype=torch.float16 if self.device.type in ["cuda", "mps"] else torch.float32,
-                low_cpu_mem_usage=True,
-                trust_remote_code=True
-            )
+            if "gemma" in model_name:
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    token=hf_token,
+                    torch_dtype=torch.bfloat16 if self.device.type in ["cuda", "mps"] else torch.float32,
+                    low_cpu_mem_usage=True,
+                    trust_remote_code=True
+                )
+            elif "Phi-3" in model_name:
+                # Phi-3-miniは特別な設定が必要
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    torch_dtype=torch.bfloat16 if self.device.type in ["cuda", "mps"] else torch.float32,
+                    low_cpu_mem_usage=True,
+                    trust_remote_code=True,
+                    attn_implementation="eager"  # DynamicCacheエラーを回避
+                )
+            elif "stablelm" in model_name:
+                # StableLM 2はbfloat16を推奨
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    torch_dtype=torch.bfloat16 if self.device.type in ["cuda", "mps"] else torch.float32,
+                    low_cpu_mem_usage=True,
+                    trust_remote_code=True,
+                    attn_implementation="flash_attention_2" if self.device.type == "cuda" else None
+                )
+            elif "elyza" in model_name.lower():
+                # ELYZAモデルはfloat16を使用
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    torch_dtype=torch.float16 if self.device.type in ["cuda", "mps"] else torch.float32,
+                    low_cpu_mem_usage=True,
+                    device_map="auto" if self.device.type == "cuda" else None
+                )
+            else:
+                self.model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    torch_dtype=torch.float16 if self.device.type in ["cuda", "mps"] else torch.float32,
+                    low_cpu_mem_usage=True,
+                    trust_remote_code=True
+                )
             
             # モデルをデバイスに移動
             self.model.to(self.device)
@@ -152,16 +252,59 @@ class NaturalLanguageGeneration:
     def _warmup_model(self, text):
         """モデルのウォームアップ（初回推論の遅延を避ける）"""
         try:
-            inputs = self.tokenizer.encode(text, return_tensors="pt", max_length=128, truncation=True)
-            inputs = inputs.to(self.device)
+            # 実際の応答生成と同じ処理を実行してキャッシュをウォームアップ
+            start_time = time.time()
+            
+            # generate_local_responseと同じプロンプト構築処理
+            model_name = self.model.config._name_or_path if hasattr(self.model.config, '_name_or_path') else ""
+            
+            if "gemma" in model_name.lower() or "stablelm" in model_name.lower() or "Phi-3" in model_name:
+                # チャットテンプレートを使用するモデル
+                messages = [{"role": "user", "content": text}]
+                try:
+                    prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                except:
+                    prompt = text
+            else:
+                # 通常のプロンプト
+                prompt = f"ユーザ：{text}\nシステム："
+            
+            # トークナイズ
+            inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            # 生成
             with torch.no_grad():
-                _ = self.model.generate(
-                    inputs,
-                    max_new_tokens=10,
-                    temperature=0.8,
-                    do_sample=False,
-                    pad_token_id=self.tokenizer.pad_token_id
-                )
+                if "Phi-3" in model_name:
+                    # Phi-3の場合はキャッシュを無効化
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=25,
+                        temperature=0.7,
+                        top_p=0.9,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        eos_token_id=self.tokenizer.eos_token_id,
+                        use_cache=False
+                    )
+                else:
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=25,
+                        temperature=0.7,
+                        top_p=0.9,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.pad_token_id,
+                        eos_token_id=self.tokenizer.eos_token_id
+                    )
+            
+            # デコード（実際の処理と同じ）
+            generated_ids = outputs[0][inputs['input_ids'].shape[1]:]
+            response = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+            
+            elapsed_ms = (time.time() - start_time) * 1000
+            sys.stdout.write(f'Model warmup completed in {elapsed_ms:.0f}ms\n')
+            
         except Exception as e:
             sys.stdout.write(f'Warmup failed (non-critical): {e}\n')
     
@@ -171,35 +314,178 @@ class NaturalLanguageGeneration:
         # モデルに応じた最適なプロンプト設定
         model_name = self.model.config._name_or_path if hasattr(self.model.config, '_name_or_path') else ""
         
+        # デフォルトの役割設定
+        if role is None:
+            role = """あなたは音声対話システムのシステム側エージェントです。本音声対話システムはリアルタイムに動作し、円滑にテンポ・リズムの良い音声対話を実現させるものです。ユーザは雑談や軽い楽しい対話を行う目的で、システムに話しかけます。ですので、長い応答ではなく、手短に、しかしユーザを喜ばせるような楽しい応答をするように心がけてください。
+
+対話例）
+ユーザ：こんにちは
+システム：こんにちはー
+
+ユーザ：今日の東京の天気はどんな感じかな？
+システム：どうかなー？わからないけど良くなるといいね！
+
+ユーザ：あなたは誰ですか？
+システム：音声対話システムっていうらしい。名前は無いから決めてよ！"""
+        
         if "rinna" in model_name:
             # rinnaモデル用の最適化されたプロンプト
-            if role is None:
-                role = "ユーザー: {query}\nシステム:"
-            prompt = role.format(query=query) if "{query}" in role else f"{role}\nユーザー: {query}\nシステム:"
+            # 対話履歴を含めたプロンプトを構築
+            prompt = f"{role}\n\n"
+            
+            # 対話履歴を追加
+            for i, hist in enumerate(self.dialogue_history):
+                if hist.startswith("ユーザ："):
+                    prompt += hist + "\n"
+                elif hist.startswith("システム："):
+                    prompt += hist + "\n"
+            
+            # 現在のクエリを追加
+            prompt += f"ユーザ：{query}\nシステム："
         elif "calm" in model_name.lower():
             # OpenCALM用のプロンプト
-            if role is None:
-                role = "以下は、ユーザーとアシスタントの会話です。\n"
-            prompt = f"{role}ユーザー: {query}\nアシスタント:"
+            prompt = f"{role}\n\n"
+            for hist in self.dialogue_history:
+                prompt += hist + "\n"
+            prompt = f"{prompt}ユーザ：{query}\nシステム："
         elif "line" in model_name.lower():
             # LINE LLM用のプロンプト
-            if role is None:
-                role = ""
-            prompt = f"{role}Human: {query}\nAssistant:"
+            prompt = f"{role}\n\n"
+            for hist in self.dialogue_history:
+                if hist.startswith("ユーザ："):
+                    prompt += hist.replace("ユーザ：", "Human: ") + "\n"
+                elif hist.startswith("システム："):
+                    prompt += hist.replace("システム：", "Assistant: ") + "\n"
+            prompt += f"Human: {query}\nAssistant:"
+        elif "gemma" in model_name.lower():
+            # Gemmaモデル用のチャットテンプレート形式（日本語指示を含む）
+            system_prompt = """あなたは日本語の音声対話システムです。以下の指示に従ってください：
+1. 必ず日本語で応答してください
+2. 15-30文字程度の短い応答を心がけてください
+3. 親しみやすい話し方をしてください
+4. 天気の質問には「ごめんなさい、天気予報はわからないです」と答えてください"""
+            
+            messages = []
+            # システムプロンプトを最初に追加
+            messages.append({"role": "user", "content": system_prompt})
+            messages.append({"role": "assistant", "content": "はい、わかりました。日本語で短く親しみやすく応答します。"})
+            
+            # 対話履歴をメッセージ形式に変換
+            for i in range(0, len(self.dialogue_history), 2):
+                if i < len(self.dialogue_history):
+                    user_msg = self.dialogue_history[i].replace("ユーザ：", "")
+                    messages.append({"role": "user", "content": user_msg})
+                if i+1 < len(self.dialogue_history):
+                    sys_msg = self.dialogue_history[i+1].replace("システム：", "")
+                    messages.append({"role": "assistant", "content": sys_msg})
+            # 現在のクエリを追加
+            messages.append({"role": "user", "content": query})
+            
+            # Gemmaのチャットテンプレートを使用
+            try:
+                prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            except:
+                # フォールバック（チャットテンプレートが使えない場合）
+                prompt = f"<bos><start_of_turn>user\n日本語で応答してください: {query}<end_of_turn>\n<start_of_turn>model\n"
+        elif "stablelm" in model_name.lower():
+            # Japanese StableLM 2用のプロンプト
+            system_prompt = """あなたは親切で知的な日本語の音声対話アシスタントです。
+以下の点に注意して応答してください：
+- 必ず日本語で応答する
+- 簡潔で親しみやすい表現を使う（20文字程度）
+- 絵文字は使わない"""
+            
+            messages = []
+            messages.append({"role": "system", "content": system_prompt})
+            
+            # 対話履歴を追加
+            for i in range(0, len(self.dialogue_history), 2):
+                if i < len(self.dialogue_history):
+                    user_msg = self.dialogue_history[i].replace("ユーザ：", "")
+                    messages.append({"role": "user", "content": user_msg})
+                if i+1 < len(self.dialogue_history):
+                    sys_msg = self.dialogue_history[i+1].replace("システム：", "")
+                    messages.append({"role": "assistant", "content": sys_msg})
+            
+            # 現在のクエリを追加
+            messages.append({"role": "user", "content": query})
+            
+            # StableLMのチャットテンプレートを適用
+            try:
+                prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                sys.stdout.write(f"[NLG StableLM DEBUG] Applied chat template (length: {len(prompt)})\n")
+            except:
+                # フォールバック
+                prompt = f"### 指示:\n{system_prompt}\n\n### 入力:\n{query}\n\n### 応答:\n"
+        elif "Phi-3" in model_name:
+            # Phi-3-mini用のプロンプト
+            system_prompt = """You are a friendly Japanese conversational assistant. 
+Rules:
+- ALWAYS respond in Japanese
+- Keep responses short (15-30 characters)
+- Be friendly and casual
+- No emojis"""
+            
+            messages = []
+            messages.append({"role": "system", "content": system_prompt})
+            
+            # 対話履歴を追加
+            for i in range(0, len(self.dialogue_history), 2):
+                if i < len(self.dialogue_history):
+                    user_msg = self.dialogue_history[i].replace("ユーザ：", "")
+                    messages.append({"role": "user", "content": user_msg})
+                if i+1 < len(self.dialogue_history):
+                    sys_msg = self.dialogue_history[i+1].replace("システム：", "")
+                    messages.append({"role": "assistant", "content": sys_msg})
+            
+            # 現在のクエリを追加
+            messages.append({"role": "user", "content": query})
+            
+            # Phi-3のチャットテンプレートを適用
+            try:
+                prompt = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                sys.stdout.write(f"[NLG Phi-3 DEBUG] Applied chat template (length: {len(prompt)})\n")
+            except:
+                # フォールバック
+                prompt = f"<|system|>\n{system_prompt}<|end|>\n<|user|>\n{query}<|end|>\n<|assistant|>\n"
+        elif "elyza" in model_name.lower():
+            # ELYZA-japanese-Llama-2用のプロンプト
+            system_prompt = """あなたは親切な日本語の音声対話アシスタントです。
+以下のルールに従って応答してください：
+- 必ず日本語で応答する
+- 20文字以内の短い応答を心がける
+- 親しみやすい口調で話す
+- 絵文字は使わない"""
+            
+            # Llama-2形式のプロンプト
+            prompt = f"""<s>[INST] <<SYS>>
+{system_prompt}
+<</SYS>>
+
+{query} [/INST]"""
         else:
             # デフォルトプロンプト
-            if role is None:
-                role = "優しい性格のアンドロイドとして、相手を労るような返答を２０文字以内でしてください。"
-            prompt = f"{role}\n質問: {query}\n回答:"
+            prompt = f"{role}\n\n"
+            for hist in self.dialogue_history:
+                prompt += hist + "\n"
+            prompt = f"{prompt}ユーザ：{query}\nシステム："
         
         # 高速化のためのトークナイズ最適化
-        inputs = self.tokenizer(
+        tokenized = self.tokenizer(
             prompt,
             return_tensors="pt",
             max_length=256,  # 入力を短くして高速化
             truncation=True,
             padding=False  # パディングは不要
-        ).input_ids.to(self.device)
+        )
+        
+        # Phi-3モデルの場合はattention_maskを明示的に設定
+        if "Phi-3" in model_name:
+            inputs = tokenized.input_ids.to(self.device)
+            attention_mask = tokenized.attention_mask.to(self.device)
+        else:
+            inputs = tokenized.input_ids.to(self.device)
+            attention_mask = None
         
         # 生成パラメータの最適化（高速化重視）
         generation_config = {
@@ -223,10 +509,42 @@ class NaturalLanguageGeneration:
         elif "calm" in model_name.lower():
             generation_config["temperature"] = 0.6
             generation_config["top_k"] = 40
+        elif "gemma" in model_name.lower():
+            # Gemmaモデル用の最適化
+            generation_config["temperature"] = 0.5  # より確定的に
+            generation_config["top_k"] = 30       # 候補をさらに制限
+            generation_config["max_new_tokens"] = 30  # 応答が途切れないよう少し増やす
+        elif "Phi-3" in model_name:
+            # Phi-3モデル用の最適化（DynamicCacheエラー回避）
+            generation_config["temperature"] = 0.7
+            generation_config["top_k"] = 40
+            generation_config["use_cache"] = False  # キャッシュを無効化してエラー回避
+        elif "elyza" in model_name.lower():
+            # ELYZAモデル用の最適化
+            generation_config["temperature"] = 0.6
+            generation_config["top_k"] = 30
+            generation_config["top_p"] = 0.9
+            generation_config["repetition_penalty"] = 1.15  # 繰り返しを防ぐ
         
         # 生成
         with torch.no_grad():
-            if self.device.type == "mps":
+            # Phi-3モデルの場合はattention_maskを含める
+            if "Phi-3" in model_name and attention_mask is not None:
+                if self.device.type == "mps":
+                    # MPS最適化
+                    with torch.autocast("mps", dtype=torch.bfloat16):
+                        outputs = self.model.generate(
+                            inputs, 
+                            attention_mask=attention_mask,
+                            **generation_config
+                        )
+                else:
+                    outputs = self.model.generate(
+                        inputs,
+                        attention_mask=attention_mask,
+                        **generation_config
+                    )
+            elif self.device.type == "mps":
                 # MPS最適化
                 with torch.autocast("mps", dtype=torch.float16):
                     outputs = self.model.generate(inputs, **generation_config)
@@ -247,37 +565,76 @@ class NaturalLanguageGeneration:
         sys.stdout.flush()
         
         # 後処理（モデル特有の処理）
-        if ":" in response and response.index(":") < 10:
-            response = response.split(":", 1)[1].strip()
+        # プレフィックスの除去（"システム："などが含まれる場合）
+        prefixes_to_remove = ["システム：", "システム:", "アシスタント：", "アシスタント:", "Assistant:", "assistant:", 
+                             "System:", "system:", "ユーザ：", "ユーザ:", "User:", "user:"]
+        for prefix in prefixes_to_remove:
+            if response.startswith(prefix):
+                response = response[len(prefix):].strip()
+                break
         
-        # 改行や余分な空白を除去
+        # 文中の"システム:"パターンも除去
+        import re
+        response = re.sub(r'システム[:：]\s*', ' ', response)
+        response = re.sub(r'ユーザ[:：]\s*', ' ', response)
+        response = re.sub(r'アシスタント[:：]\s*', ' ', response)
+        
+        # 不要な記号や改行を除去
         response = response.replace("\n", " ").strip()
+        response = response.replace("　", " ")  # 全角スペースを半角に
         
-        # 最初の句読点で切る（自然な終了）
-        for delimiter in ["。", "！", "？", "、"]:
-            if delimiter in response:
-                parts = response.split(delimiter)
-                if len(parts[0]) >= 5:  # 最低5文字は保持
-                    response = parts[0] + delimiter
-                    break
+        # 連続する句読点を修正
+        response = response.replace("。。", "。")
+        response = response.replace("！！", "！")
+        response = response.replace("？？", "？")
+        response = response.replace("、、", "、")
+        
+        # 括弧内の内容を除去（システムの思考や説明が含まれることがある）
+        import re
+        response = re.sub(r'（[^）]*）', '', response)
+        response = re.sub(r'\([^)]*\)', '', response)
+        response = re.sub(r'\[[^\]]*\]', '', response)
         
         # 長さ制限（30文字以内に調整）
         if len(response) > 30:
-            # 文節の区切りで切る
-            if "、" in response[:30]:
-                response = response[:response.index("、", 0, 30)] + "。"
+            # 句読点で区切る
+            sentences = re.split(r'[。！？]', response)
+            if sentences and sentences[0]:
+                # 最初の文を使用
+                response = sentences[0]
+                # 末尾に句読点を追加
+                if not response.endswith(('。', '！', '？', '〜', 'ー')):
+                    response += "。"
             else:
-                response = response[:28] + "。"
-        elif len(response) < 3:
-            # 短すぎる場合のフォールバック
-            response = "はい。"
+                # 句読点がない場合は単純に切る
+                response = response[:28] + "…"
+        
+        # 短すぎる場合の処理
+        if len(response) < 2:
+            # 短すぎる場合のフォールバック応答
+            fallback_responses = ["はい！", "そうだね！", "なるほど〜", "ふむふむ", "了解！"]
+            import random
+            response = random.choice(fallback_responses)
+        
+        # 最終的な空白の除去
+        response = response.strip()
         
         return response
 
     def update(self, words):
         # wordsはリスト型
-        self.words = words
-        self.query = words[0] if words else ""
+        if not words or not any(w and w.strip() for w in words):
+            print("[DEBUG NLG] 空のwordsを受信。処理をスキップします。")
+            return
+        
+        # 短すぎる発話（全て2文字未満）も除外
+        valid_words = [w for w in words if w and w.strip() and len(w.strip()) >= 2]
+        if not valid_words:
+            print(f"[DEBUG NLG] 短すぎる発話を検出: {words}。処理をスキップします。")
+            return
+        
+        self.words = valid_words
+        self.query = valid_words[0] if valid_words else ""
         self.update_flag = True
     # def generate_dialogue(self, query):
     #     sys.stdout.write('対話履歴作成\n')
@@ -392,6 +749,20 @@ class NaturalLanguageGeneration:
                 # デバッグ: 応答内容の詳細確認
                 sys.stdout.write(f"[NLG DEBUG] query: '{query}' → res: '{res}' (length: {len(res)})\n")
                 sys.stdout.flush()
+                
+                # 対話履歴を更新
+                self.dialogue_history.append(f"ユーザ：{query}")
+                self.dialogue_history.append(f"システム：{res}")
+                
+                # 履歴の最大数を超えたら古いものから削除
+                if len(self.dialogue_history) > self.max_dialogue_history:
+                    # 古い発話ペアを削除（2つずつ削除）
+                    self.dialogue_history = self.dialogue_history[-self.max_dialogue_history:]
+                
+                # デバッグ: 対話履歴の状態
+                sys.stdout.write(f"[NLG DEBUG] 対話履歴数: {len(self.dialogue_history)}\n")
+                if len(self.dialogue_history) > 0:
+                    sys.stdout.write(f"[NLG DEBUG] 最新履歴: {self.dialogue_history[-2:]}\n")
                 
                 # 空の応答をチェックして、フォールバック応答を使用
                 if not res or res.strip() == "":

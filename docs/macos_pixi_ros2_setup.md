@@ -62,7 +62,7 @@ pixi add pip
 
 ```bash
 # 新しいターミナルで
-cd ~/DiaROS_pixi/diaros_workspace
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
 
 # ターミナル1: Talker
 pixi run ros2 run demo_nodes_cpp talker
@@ -83,7 +83,7 @@ git clone https://github.com/sayonari/DiaROS_imamoto.git
 cd DiaROS_imamoto
 
 # Pixi環境内でPythonパッケージをインストール
-cd ~/DiaROS_pixi/diaros_workspace
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
 pixi shell  # Pixi環境に入る
 
 # 必要なPythonパッケージをインストール
@@ -114,7 +114,7 @@ pip install playsound pydub PyObjC
 
 ```bash
 # Pixi環境内で実行
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # Python環境変数の設定（CMakeがPython 3.9を見つけられるように）
 export Python3_ROOT_DIR=$CONDA_PREFIX
@@ -188,7 +188,7 @@ export HF_TOKEN=your_token_here
 
 ```bash
 # Pixi環境内で
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 pixi shell
 
 # 環境変数の設定

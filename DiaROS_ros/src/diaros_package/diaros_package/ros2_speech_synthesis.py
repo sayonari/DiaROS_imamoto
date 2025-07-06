@@ -24,18 +24,23 @@ class RosSpeechSynthesis(Node):
         # self.pub_wav = self.create_publisher(SynthWav, 'SynthWav', 1)  # ← 削除
         self.timer = self.create_timer(0.02, self.send)
         self.is_speaking = False
+        self.current_utterance_id = None  # 現在処理中の発話ID
 
     def play(self, nlg):
         text = str(nlg.reply)
-        print(f"[DEBUG ROS2_SS] 音声合成リクエスト: '{text}' (length: {len(text)})")
+        utterance_id = nlg.utterance_id if hasattr(nlg, 'utterance_id') else None
+        print(f"[DEBUG ROS2_SS] 音声合成リクエスト: '{text}' (ID: {utterance_id}, length: {len(text)})")
         
         # 空のテキストチェック
         if not text or text.strip() == "":
             print("[DEBUG ROS2_SS] 空のテキストを検出。音声合成をスキップします。")
             return
+        
+        # 発話IDを保存
+        self.current_utterance_id = utterance_id
             
         wav_path = self.speechSynthesis.run(text)
-        print(f"[DEBUG ROS2_SS] 音声合成結果: {wav_path}")
+        print(f"[DEBUG ROS2_SS] 音声合成結果: {wav_path} (ID: {utterance_id})")
         # 音声合成後、ファイル名をIssでpublish
         # wav_msg = SynthWav()
         # wav_msg.filename = wav_path if wav_path else ""
@@ -55,14 +60,21 @@ class RosSpeechSynthesis(Node):
         # 追記
         now = datetime.now()
         ss.timestamp = now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        # 発話IDを設定
+        ss.utterance_id = self.current_utterance_id if self.current_utterance_id else ""
+        
         # 直近の合成ファイル名を取得して送信
         if hasattr(self.speechSynthesis, 'last_tts_file'):
             ss.filename = self.speechSynthesis.last_tts_file if self.speechSynthesis.last_tts_file else ""
-            if ss.filename:
-                print(f"[DEBUG ROS2_SS] publish filename: {ss.filename}")
+            # ファイル名が変更された時のみ出力（冗長なログを防ぐ）
+            if ss.filename and not hasattr(self, '_last_published_filename'):
+                self._last_published_filename = ss.filename
+                print(f"[DEBUG ROS2_SS] publish filename: {ss.filename} (ID: {ss.utterance_id})")
+            elif ss.filename and ss.filename != getattr(self, '_last_published_filename', ''):
+                self._last_published_filename = ss.filename
+                print(f"[DEBUG ROS2_SS] publish filename: {ss.filename} (ID: {ss.utterance_id})")
         else:
             ss.filename = ""
-            print("[DEBUG ROS2_SS] last_tts_file属性が存在しません")
         self.pub_ss.publish(ss)
         self.speechSynthesis.speak_end = False
 

@@ -19,15 +19,18 @@ class RosNaturalLanguageGeneration(Node):
         # self.pub_mm = self.create_publisher(Imm, 'MM', 1)
         self.timer = self.create_timer(0.02, self.ping)
         self.last_sent_reply = None
+        self.current_utterance_id = None  # 現在処理中の発話ID
 
     def dm_update(self, msg):
         words = list(msg.words)
-        print(f"[DEBUG NLG] Received message from DM: {words}")
+        utterance_id = msg.utterance_id if hasattr(msg, 'utterance_id') else None
+        print(f"[DEBUG NLG] Received message from DM: {words} (ID: {utterance_id})")
         sys.stdout.flush()
         # 空でないwordsのみ処理（空文字列のリストは無視）
         if words and any(w and w.strip() for w in words):
-            self.get_logger().info(f'[NLG] Received words from DM: {words}')
+            self.get_logger().info(f'[NLG] Received words from DM: {words} (ID: {utterance_id})')
             self.naturalLanguageGeneration.update(words)
+            self.current_utterance_id = utterance_id  # 発話IDを保存
         # else:
         #     # 空のメッセージは無視してログ出力しない
         #     pass
@@ -37,10 +40,11 @@ class RosNaturalLanguageGeneration(Node):
         if hasattr(self.naturalLanguageGeneration, "last_reply") and self.naturalLanguageGeneration.last_reply != self.last_sent_reply:
             nlg_msg = Inlg()
             nlg_msg.reply = self.naturalLanguageGeneration.last_reply
+            nlg_msg.utterance_id = self.current_utterance_id if self.current_utterance_id else ""  # 発話IDを設定
             self.pub_nlg.publish(nlg_msg)  # ここでNLG生成文をNLGtoSSトピックで送信
             # self.pub_nlg_dr.publish(nlg_msg)  # ← コメントアウト
             self.last_sent_reply = self.naturalLanguageGeneration.last_reply
-            self.get_logger().info(f'[NLG] Published response: {self.last_sent_reply}')
+            self.get_logger().info(f'[NLG] Published response: {self.last_sent_reply} (ID: {self.current_utterance_id})')
         mm = Imm()
         mm.mod = "nlg"
         # self.pub_mm.publish(mm)

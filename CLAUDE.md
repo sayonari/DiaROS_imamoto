@@ -21,12 +21,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **既存ツールを精査**: 見つかった場合は内容を精査し、目的に合致すれば必ずそれを使用
 3. **新規作成は最終手段**: 既存のものがない場合のみ新規作成を検討
 4. **ビルドは必ずビルドスクリプトを使用**: `scripts/build/build_diaros.sh`など既存のビルドスクリプトを使用
+5. **スクリプトの配置ルール**: 
+   - **scripts/ルートディレクトリには直接ファイルを置かない**
+   - 必ず適切なサブディレクトリに配置する:
+     - `build/`: ビルド関連
+     - `debug/`: デバッグ・モニタリング
+     - `launch/`: 起動スクリプト
+     - `setup/`: セットアップ・設定
+     - `test/`: テストスクリプト
+     - `utils/`: その他ユーティリティ
 
 ### 改行コードの統一 / Line Ending Consistency
 **すべてのシェルスクリプトはLF（Unix形式）で作成すること。**
 - Windowsの改行コード（CRLF）は使用禁止
 - 新規作成時は必ずLFを使用
 - エディタの設定を確認してLFに統一
+
+**重要：スクリプト作成時の手順**
+1. 必ずWriteツールで作成すること（Editツールは改行コードが不正になる場合がある）
+2. 作成後、以下のコマンドで改行コードを確認・修正：
+   ```bash
+   # 改行コードの確認
+   file /path/to/script.sh
+   
+   # CRLFをLFに変換（macOS）
+   sed -i '' 's/\r$//' /path/to/script.sh
+   
+   # または dos2unix を使用
+   dos2unix /path/to/script.sh
+   ```
+3. 実行権限を付与：
+   ```bash
+   chmod +x /path/to/script.sh
+   ```
 
 ### パスの汎用性維持 / Path Portability
 **絶対パスは使用禁止。** 公開リポジトリとして配布されるため、汎用性を保つこと。
@@ -197,3 +224,27 @@ export GOOGLE_APPLICATION_CREDENTIALS="/path/to/google/credentials.json"
 8. **Backchannel**: Generates appropriate listener responses during speech
 
 The modular ROS2 architecture allows individual components to be developed, tested, and debugged independently while maintaining real-time communication capabilities.
+
+## プロジェクト構造 / Project Structure
+
+### 重要：実際のプロジェクトパス構成
+**DiaROSプロジェクトは以下の場所に配置されています：**
+```
+/Users/sayonari/_data/_DiaROS_mac/DiaROS_pixi/
+├── diaros_workspace/              # Pixi仮想環境ワークスペース
+└── DiaROS_imamoto/               # DiaROSメインディレクトリ
+    ├── DiaROS_py/                # Pythonコアライブラリ
+    ├── DiaROS_ros/               # ROS2パッケージ
+    ├── scripts/                  # ユーティリティスクリプト
+    └── CLAUDE.md                 # このファイル
+```
+
+### 音声ファイルの場所
+- **相槌音声**: `DiaROS_ros/static_back_channel_*.wav`
+- **静的応答**: `DiaROS_ros/static_response_source/static_response_*.wav`
+- **合成音声**: `DiaROS_ros/tmp/*.wav`
+
+### スクリプト実行時の注意
+- スクリプトはPixi環境内で実行する必要があります
+- 作業ディレクトリ: `cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace && pixi shell`
+- 実行例: `pixi run python3 ../DiaROS_imamoto/scripts/test/test_audio_playback.py`

@@ -16,12 +16,19 @@ echo ""
 unset OPENAI_API_KEY
 unset ANTHROPIC_API_KEY
 
-# ローカルLLMモデルを設定（最速のrinna-smallを使用）
+# ローカルLLMモデルを設定（rinna-smallを使用）
 export DIAROS_LLM_MODEL=rinna-small
 
 echo "📊 設定:"
-echo "  - LLMモデル: rinna/japanese-gpt2-small（最速）"
+echo "  - LLMモデル: rinna-small（最速・軽量）"
 echo "  - APIキー: 無効化済み"
+echo ""
+echo "💡 代替オプション:"
+echo "  - 最速: export DIAROS_LLM_MODEL=rinna-small"
+echo "  - 中品質: export DIAROS_LLM_MODEL=calm-small"
+echo "  - 別の高品質: export DIAROS_LLM_MODEL=rinna-neox"
+echo "  - 超高速: export DIAROS_LLM_MODEL=phi-3-mini"
+echo "  - API使用: export OPENAI_API_KEY='your-api-key'"
 echo ""
 
 # 通常の起動スクリプトを実行

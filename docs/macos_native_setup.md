@@ -78,7 +78,7 @@ git clone https://github.com/sayonari/DiaROS_imamoto.git
 ### 3.2 Pixi環境でのPythonパッケージインストール
 ```bash
 # Pixi環境に入る
-cd ~/DiaROS_pixi/diaros_workspace
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
 pixi shell
 
 # 基本パッケージのインストール
@@ -152,7 +152,7 @@ export HF_TOKEN=your_token_here
 ### 6.1 ROS2パッケージのビルド
 ```bash
 # Pixi環境でDiaROSディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # Python環境変数の設定（CMakeがPython 3.9を見つけられるように）
 export Python3_ROOT_DIR=$CONDA_PREFIX
@@ -196,7 +196,7 @@ python -c "import diaros; print('DiaROS module imported successfully')"
 ### 6.3 DiaROSの起動
 ```bash
 # DiaROSディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # 環境変数の設定
 export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用
@@ -310,7 +310,7 @@ ros2 run rqt_graph rqt_graph
 ### 10.1 クイックスタートスクリプト
 ```bash
 # scripts/pixi_diaros_quick_start.sh を使用
-cd ~/DiaROS_pixi/DiaROS_imamoto
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto
 ./scripts/pixi_diaros_quick_start.sh
 ```
 

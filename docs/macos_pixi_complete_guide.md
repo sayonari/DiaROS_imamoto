@@ -67,7 +67,7 @@ git clone https://github.com/sayonari/DiaROS_imamoto.git
 
 ```bash
 # Pixi環境に入る
-cd ~/DiaROS_pixi/diaros_workspace
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
 pixi shell
 
 # NumPyを1.xに固定（aubioとの互換性のため）
@@ -112,7 +112,7 @@ python -c "import aubio; print(f'aubio version: {aubio.version}')"
 
 ```bash
 # DiaROS_rosディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # Python環境変数の設定（CMakeがPython 3.9を見つけられるように）
 export Python3_ROOT_DIR=$CONDA_PREFIX
@@ -194,7 +194,7 @@ export HF_TOKEN=your_token_here
 
 ```bash
 # DiaROS_rosディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # 環境変数の設定
 export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用

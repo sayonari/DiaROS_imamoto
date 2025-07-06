@@ -12,6 +12,7 @@ import time
 from datetime import datetime
 import sys
 import threading
+from collections import deque
 
 class DiaROSFlowDebugger(Node):
     def __init__(self):
@@ -43,17 +44,19 @@ class DiaROSFlowDebugger(Node):
             'bc_count': 0
         }
         
+        # 最新イベントのキュー（最大5行）
+        self.event_queue = deque(maxlen=5)
+        
         # サブスクライバーの設定
         self.setup_subscribers()
         
         # 定期的な表示用タイマー
-        self.display_timer = self.create_timer(1.0, self.display_status)
+        self.display_timer = self.create_timer(0.5, self.display_status)
         
         self.get_logger().info('DiaROSフローデバッガーを起動しました')
-        print('\n' + '='*70)
-        print('DiaROS対話フローデバッガー - リアルタイム監視')
-        print('='*70)
-        print('Ctrl+Cで終了します\n')
+        
+        # 初期表示
+        self.display_status()
         
     def setup_subscribers(self):
         """各トピックのサブスクライバーを設定"""
@@ -102,6 +105,11 @@ class DiaROSFlowDebugger(Node):
             Ibc, 'BCtoDM', 
             lambda msg: self.bc_callback(msg), 10)
     
+    def add_event(self, event_text):
+        """最新イベントキューにイベントを追加"""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.event_queue.append(f"[{timestamp}] {event_text}")
+    
     def audio_callback(self, msg):
         """音声入力のコールバック"""
         self.stats['audio_input_count'] += 1
@@ -119,9 +127,9 @@ class DiaROSFlowDebugger(Node):
         self.stats['asr_count'] += 1
         self.latest_data['asr'] = f"'{msg.you}' (final: {msg.is_final})"
         self.timestamps['asr'] = datetime.now()
-        # 重要なイベントは即座に表示
+        # 重要なイベントは最新イベントに追加
         if msg.you:
-            print(f"\n🎤 [ASR] 認識結果: '{msg.you}' (final: {msg.is_final})")
+            self.add_event(f"🎤 [ASR] 認識結果: '{msg.you}' (final: {msg.is_final})")
     
     def dm_to_nlg_callback(self, msg):
         """対話管理→NLGのコールバック"""
@@ -133,24 +141,26 @@ class DiaROSFlowDebugger(Node):
         self.latest_data['dm'] = f"Words: {non_empty_words}"
         self.timestamps['dm'] = datetime.now()
         if non_empty_words:
-            print(f"\n💭 [DM→NLG] 生成要求: {non_empty_words}")
-        # 空の生成要求は表示しない（ノイズを減らすため）
+            self.add_event(f"💭 [DM→NLG] 生成要求: {non_empty_words}")
     
     def nlg_callback(self, msg):
         """NLGのコールバック"""
         self.stats['nlg_count'] += 1
-        self.latest_data['nlg'] = f"'{msg.reply}'"
+        self.latest_data['nlg'] = f"'{msg.reply[:30]}...'" if len(msg.reply) > 30 else f"'{msg.reply}'"
         self.timestamps['nlg'] = datetime.now()
-        print(f"\n🤖 [NLG] 応答生成: '{msg.reply}'")
+        if msg.reply:
+            self.add_event(f"🤖 [NLG] 応答生成: '{msg.reply}'")
     
     def ss_callback(self, msg):
         """音声合成のコールバック"""
         self.stats['ss_count'] += 1
-        self.latest_data['ss'] = f"File: {msg.filename}, Time: {msg.timestamp}"
+        # ファイル名から最後の部分だけ抽出
+        filename = msg.filename.split('/')[-1] if msg.filename else ''
+        self.latest_data['ss'] = f"File: {filename}"
         self.timestamps['ss'] = datetime.now()
         # ファイル名が存在する場合のみ表示
         if msg.filename and msg.filename.strip():
-            print(f"\n🔊 [SS] 音声合成完了: {msg.filename}")
+            self.add_event(f"🔊 [SS] 音声合成完了: {filename}")
     
     def tt_callback(self, msg):
         """ターンテイキングのコールバック"""
@@ -158,64 +168,83 @@ class DiaROSFlowDebugger(Node):
         self.latest_data['tt'] = f"Confidence: {msg.confidence:.3f}"
         self.timestamps['tt'] = datetime.now()
         if msg.confidence > 0.5:
-            print(f"\n🔄 [TT] ターン交代検出: {msg.confidence:.3f}")
+            self.add_event(f"🔄 [TT] ターン交代検出: {msg.confidence:.3f}")
     
     def bc_callback(self, msg):
         """バックチャンネルのコールバック"""
         self.stats['bc_count'] += 1
-        self.latest_data['bc'] = f"Result: {msg.result}, Confidence: {msg.confidence:.3f}"
+        self.latest_data['bc'] = f"Result: {msg.result}, Conf: {msg.confidence:.3f}"
         self.timestamps['bc'] = datetime.now()
         if msg.confidence > 0.6:  # 相槌の閾値
-            print(f"\n😊 [BC] 相槌判定: confidence={msg.confidence:.3f}")
+            self.add_event(f"😊 [BC] 相槌判定: confidence={msg.confidence:.3f}")
     
     def display_status(self):
         """定期的にステータスを表示"""
         # カーソルを上に移動してステータスを更新
         print('\033[H\033[J', end='')  # 画面クリア
-        print('='*70)
+        print('='*80)
         print('DiaROS対話フローデバッガー - リアルタイム監視')
-        print('='*70)
-        print(f'更新時刻: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
-        print('-'*70)
+        print('='*80)
+        print(f'更新時刻: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}  (Ctrl+Cで終了)')
+        print('-'*80)
         
-        # 各モジュールの状態を表示
+        # 各モジュールの状態を1行ずつ表示
+        print('【モジュール状態】')
+        
         modules = [
-            ('音声入力', 'audio_input', '🎙️'),
-            ('音響分析', 'acoustic_analysis', '📊'),
-            ('音声認識', 'asr', '🎤'),
-            ('対話管理', 'dm', '💭'),
-            ('応答生成', 'nlg', '🤖'),
-            ('音声合成', 'ss', '🔊'),
-            ('ターン管理', 'tt', '🔄'),
-            ('相槌', 'bc', '😊')
+            ('音声入力', 'audio_input'),
+            ('音響分析', 'acoustic_analysis'),
+            ('音声認識', 'asr'),
+            ('対話管理', 'dm'),
+            ('応答生成', 'nlg'),
+            ('音声合成', 'ss'),
+            ('ターン管理', 'tt'),
+            ('相槌', 'bc')
         ]
         
-        for name, key, icon in modules:
+        for name, key in modules:
             data = self.latest_data.get(key, 'データなし')
             timestamp = self.timestamps.get(key)
             if timestamp:
                 elapsed = (datetime.now() - timestamp).total_seconds()
-                status = '🟢' if elapsed < 2 else ('🟡' if elapsed < 5 else '🔴')
+                status = '●' if elapsed < 2 else ('○' if elapsed < 5 else '×')
             else:
-                status = '⚫'
+                status = '－'
             
-            # 日本語文字幅を考慮した統一フォーマット
-            # 全角文字は2文字分として計算
-            name_width = sum(2 if ord(c) > 127 else 1 for c in name)
-            padding = 12 - name_width  # 12文字分の幅を確保
-            print(f'{icon} {name}{" " * padding} {status} {data}')
+            # モジュール名を固定幅で表示（全角文字考慮）
+            name_display = name.ljust(6, '　')  # 全角スペースで埋める
+            
+            # データ部分を切り詰めて表示
+            if isinstance(data, str) and len(data) > 50:
+                data = data[:47] + '...'
+            
+            print(f'{status} {name_display}：{data}')
         
-        print('-'*70)
-        print('統計情報:')
-        print(f'  音声入力: {self.stats["audio_input_count"]:6d} | '
+        print('-'*80)
+        
+        # 最新イベント（5行固定）
+        print('【最新イベント】')
+        
+        # イベントキューが5行未満の場合は空行で埋める
+        events = list(self.event_queue)
+        for i in range(5):
+            if i < len(events):
+                print(events[i])
+            else:
+                print('')  # 空行
+        
+        print('-'*80)
+        
+        # 統計情報
+        print('【統計情報】')
+        print(f'音声入力: {self.stats["audio_input_count"]:6d} | '
               f'ASR: {self.stats["asr_count"]:4d} | '
               f'DM: {self.stats["dm_count"]:4d} | '
-              f'NLG: {self.stats["nlg_count"]:4d}')
-        print(f'  SS: {self.stats["ss_count"]:4d} | '
+              f'NLG: {self.stats["nlg_count"]:4d} | '
+              f'SS: {self.stats["ss_count"]:4d} | '
               f'TT: {self.stats["tt_count"]:4d} | '
               f'BC: {self.stats["bc_count"]:4d}')
-        print('='*70)
-        print('\n最新イベント:')
+        print('='*80)
 
 def main():
     rclpy.init()

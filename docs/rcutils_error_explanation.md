@@ -28,7 +28,7 @@
 ### 2. 既存の起動ファイルのビルド
 新しい起動ファイル（sdsmod_quiet.launch.py）を使用するには、まずビルドが必要です：
 ```bash
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 colcon build --packages-select diaros_package
 source ./install/local_setup.bash
 ```

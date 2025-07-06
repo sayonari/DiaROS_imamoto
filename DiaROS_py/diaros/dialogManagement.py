@@ -112,9 +112,11 @@ class DialogManagement:
         sys.stdout.write('DialogManagement start up.\n')
         sys.stdout.write('=====================================================\n')
 
-        # static_response_archive内のwavファイル一覧を取得し、ソートして保存
+        # static_response_source内のwavファイル一覧を取得し、ソートして保存
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        static_response_dir = os.path.join(base_dir, "../../DiaROS_ros/static_response_source")
         self.static_response_files = sorted(
-            glob.glob("static_response_archive/static_response_*.wav")
+            glob.glob(os.path.join(static_response_dir, "static_response_*.wav"))
         )
         self.static_response_index = 0
 
@@ -124,13 +126,33 @@ class DialogManagement:
         self.latest_bc_data = None
         self.latest_bc_time = None
         self.latest_synth_filename = None # 追加: 音声合成ファイル名を保存する変数
+        
+        # 発話IDベースの音声ファイル管理
+        self.utterance_audio_map = {}  # {utterance_id: filename}のマッピング
+        self.current_utterance_id = None  # 現在処理中の発話ID
+        self.utterance_counter = 0  # 発話IDカウンター
+        self.last_requested_word = None  # 最後に応答生成要求を送信した内容
 
         self.prev_asr_you = ""  # 直前のASR結果をインスタンス変数に
         self.last_asr_update_time = None  # ASR結果が更新された時刻
         self.response_request_sent = False  # 応答要求を送信済みかどうか
-        self.pause_threshold_ms = 200  # ポーズ検出閾値（ミリ秒）
+        self.pause_threshold_ms = 300  # ポーズ検出閾値（ミリ秒）- 200msから300msに増加して安定化
+        self.tt_waiting_for_synth = False  # TT判定後、音声ファイル待機中
+        self.tt_wait_start_time = None  # 音声ファイル待機開始時刻
         self.user_speaking = False  # ユーザが発話中かどうか
         self.last_significant_asr = ""  # 最後の有意なASR結果
+        self.response_request_time = None  # 応答要求を送信した時刻
+        self.min_utterance_length = 2  # 応答生成に必要な最小文字数
+        
+        # 発話IDベースの同期機構
+        self.pending_responses = {}  # 発話ID -> 応答内容のマッピング
+        self.completed_utterances = set()  # 完了済み発話IDのセット
+        
+        # セッションID管理
+        self.session_id = None  # 現在の発話セッションID
+        self.last_user_speech_time = None  # 最後のユーザ発話時刻
+        self.session_pause_threshold_ms = 500  # 新セッション開始のポーズ閾値
+        self.response_queue = []  # 応答キュー（発話ID付き）
 
     def run(self):
         prev = ""
@@ -188,6 +210,30 @@ class DialogManagement:
                 changed_chars = sum(1 for d in diff if d.startswith('+ ') or d.startswith('- '))
                 # 直前のASR結果と異なる場合のみ判定（閾値を3文字に下げる）
                 if changed_chars >= 3 and self.asr["you"] != self.prev_asr_you:
+                    current_time = datetime.now()
+                    
+                    # 新セッションの開始判定（改善版：連続発話時の判定を緩和）
+                    # ASRがis_finalでない場合、または最後の応答から時間が短い場合はセッションを維持
+                    should_start_new_session = False
+                    if self.last_user_speech_time is None:
+                        should_start_new_session = True
+                    else:
+                        time_since_last_speech = (current_time - self.last_user_speech_time).total_seconds() * 1000
+                        # 最後の応答から2秒以上経過し、かつ最後の発話から500ms以上経過した場合のみ新セッション
+                        time_since_last_response = (current_time - datetime.fromtimestamp(self.last_response_time)).total_seconds() if hasattr(self, 'last_response_time') and self.last_response_time > 0 else float('inf')
+                        if time_since_last_speech >= self.session_pause_threshold_ms and time_since_last_response >= 2.0:
+                            should_start_new_session = True
+                    
+                    if should_start_new_session:
+                        # 新しいセッション開始
+                        self.session_id = f"session_{self.utterance_counter}_{int(time.time()*1000)}"
+                        sys.stdout.write(f"[DM] \n========== 新セッション開始: {self.session_id} ==========\n")
+                        sys.stdout.flush()
+                        # 古いセッションの情報をクリア
+                        self.pending_responses.clear()
+                        self.utterance_audio_map.clear()
+                        self.current_utterance_id = None
+                    
                     self.word = self.asr["you"]
                     self.prev_asr_you = self.asr["you"]
                     # ASR履歴に追加
@@ -196,7 +242,8 @@ class DialogManagement:
                     sys.stdout.flush()
                     # ユーザが発話を開始
                     self.user_speaking = True
-                    self.last_asr_update_time = datetime.now()
+                    self.last_asr_update_time = current_time
+                    self.last_user_speech_time = current_time  # ユーザ発話時刻を更新
                     self.response_update = False  # 即座の応答生成は行わない
                     # 有意なASR結果を保存（5文字以上）
                     if len(self.asr["you"]) >= 5:
@@ -206,25 +253,105 @@ class DialogManagement:
             else:
                 self.response_update = False
                 
-            # ポーズ検出による応答生成（200ms以上の無音）
+            # ポーズ検出による応答生成（300ms以上の無音）
             if (self.user_speaking and  # ユーザが発話中の場合のみ
                 self.last_asr_update_time is not None and 
                 not self.response_request_sent and 
                 self.last_significant_asr and self.last_significant_asr.strip()):  # 有意なASR結果がある場合のみ
                 time_since_update = datetime.now() - self.last_asr_update_time
-                if time_since_update >= timedelta(milliseconds=self.pause_threshold_ms):
-                    # wordが空でないことを再度確認
-                    if self.last_significant_asr and self.last_significant_asr.strip():
-                        self.response_update = True
-                        self.response_request_sent = True
-                        self.user_speaking = False  # ユーザ発話終了
-                        self.word = self.last_significant_asr  # 最後の有意なASR結果を使用
-                        sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求: '{self.word}'\n")
-                        sys.stdout.write(f"[DEBUG DM] response_update設定: response_update={self.response_update}, word='{self.word}'\n")
-                        sys.stdout.flush()
+                
+                # 2秒以上のポーズで強制的に応答生成/再生
+                force_response = time_since_update >= timedelta(seconds=2.0)
+                
+                if time_since_update >= timedelta(milliseconds=self.pause_threshold_ms) or force_response:
+                    # wordが空でなく、かつ最小文字数以上であることを確認
+                    if (self.last_significant_asr and self.last_significant_asr.strip() and 
+                        len(self.last_significant_asr.strip()) >= self.min_utterance_length):
+                        # 既に同じ内容で応答生成要求を送信していないかチェック
+                        if not hasattr(self, 'last_requested_word') or self.last_requested_word != self.last_significant_asr:
+                            # セッションIDが設定されていない場合は設定
+                            if not self.session_id:
+                                self.session_id = f"session_{self.utterance_counter}_{int(time.time()*1000)}"
+                            
+                            # 新しい発話IDを生成（セッションIDを含む）
+                            self.utterance_counter += 1
+                            self.current_utterance_id = f"{self.session_id}_utt_{self.utterance_counter}"
+                            
+                            # 応答生成をトリガー
+                            self.response_update = True
+                            self.response_request_sent = True
+                            self.user_speaking = False  # ユーザ発話終了
+                            self.word = self.last_significant_asr  # 最後の有意なASR結果を使用
+                            self.last_requested_word = self.last_significant_asr  # 最後に要求した内容を記録
+                            self.utterance_id = self.current_utterance_id  # 現在の発話IDを設定
+                            
+                            # ペンディング応答として記録
+                            self.pending_responses[self.current_utterance_id] = self.word
+                            
+                            sys.stdout.write(f"[DM] {self.pause_threshold_ms}msポーズ検出 - 応答生成要求: '{self.word}' (ID: {self.current_utterance_id})\n")
+                            sys.stdout.write(f"[DEBUG DM] response_update設定: response_update={self.response_update}, word='{self.word}'\n")
+                            sys.stdout.flush()
+                            self.response_request_time = datetime.now()
                     else:
                         self.response_update = False
 
+            # 2秒ポーズでの強制応答再生チェック
+            if (self.last_asr_update_time is not None and 
+                not is_playing_response and
+                self.last_significant_asr and self.last_significant_asr.strip()):
+                time_since_asr = (datetime.now() - self.last_asr_update_time).total_seconds()
+                if time_since_asr >= 2.0:
+                    # 現在のセッションの音声ファイルを探す
+                    force_play_wav = None
+                    force_play_utt_id = None
+                    if hasattr(self, 'session_id') and self.session_id:
+                        for utt_id, file_path in self.utterance_audio_map.items():
+                            if utt_id.startswith(self.session_id) and os.path.exists(file_path):
+                                force_play_wav = file_path
+                                force_play_utt_id = utt_id
+                                break
+                    
+                    if force_play_wav:
+                        # 強制的に応答を再生
+                        sys.stdout.write(f"[DM] 2秒ポーズ検出 - 強制応答再生: {force_play_utt_id}\n")
+                        sys.stdout.flush()
+                        try:
+                            audio = AudioSegment.from_wav(force_play_wav)
+                            duration_sec = len(audio) / 1000.0
+                            if sys.platform == "darwin":
+                                os.system(f"afplay '{force_play_wav}'")
+                            else:
+                                playsound(force_play_wav, True)
+                            # 再生後の状態リセット
+                            self.last_response_time = time.time()
+                            self.response_request_sent = False
+                            self.last_asr_update_time = None
+                            self.user_speaking = False
+                            self.last_significant_asr = ""
+                            self.last_requested_word = None
+                            is_playing_response = True
+                            last_response_end_time = time.time() + duration_sec
+                        except Exception as e:
+                            sys.stdout.write(f"[ERROR] 強制応答再生エラー: {e}\n")
+                            sys.stdout.flush()
+                    else:
+                        # 音声ファイルがない場合は応答生成を強制トリガー
+                        if not self.response_request_sent:
+                            sys.stdout.write(f"[DM] 2秒ポーズ検出 - 強制応答生成トリガー\n")
+                            sys.stdout.flush()
+                            # 応答生成の強制実行処理をここに追加
+                            if not self.session_id:
+                                self.session_id = f"session_{self.utterance_counter}_{int(time.time()*1000)}"
+                            self.utterance_counter += 1
+                            self.current_utterance_id = f"{self.session_id}_utt_{self.utterance_counter}"
+                            self.response_update = True
+                            self.response_request_sent = True
+                            self.user_speaking = False
+                            self.word = self.last_significant_asr
+                            self.last_requested_word = self.last_significant_asr
+                            self.utterance_id = self.current_utterance_id
+                            self.pending_responses[self.current_utterance_id] = self.word
+            
             # TTデータの判定・再生
             if self.latest_tt_data is not None and self.latest_tt_time != last_handled_tt_time:
                 tt_data = self.latest_tt_data
@@ -242,16 +369,53 @@ class DialogManagement:
                     last_handled_tt_time = tt_time
                     continue
                 if probability >= turn_taking_threshold:
-                    # ここで音声合成ファイル名があればそれを再生
-                    if hasattr(self, 'latest_synth_filename') and self.latest_synth_filename:
-                        wav_path = self.latest_synth_filename
-                        print(f"[DEBUG DM] TT判定時 - latest_synth_filename: {wav_path}")
+                    # TT判定成功をマーク（音声ファイル待ち状態へ）
+                    if not hasattr(self, 'tt_waiting_for_synth'):
+                        self.tt_waiting_for_synth = False
+                    if not hasattr(self, 'tt_wait_start_time'):
+                        self.tt_wait_start_time = None
+                    
+                    # 音声ファイル待ち状態の開始
+                    if not self.tt_waiting_for_synth:
+                        self.tt_waiting_for_synth = True
+                        self.tt_wait_start_time = time.time()
+                        sys.stdout.write(f"[TT] 応答タイミング検出 (confidence={probability:.2f}) - 音声ファイル待機開始\n")
+                        sys.stdout.flush()
+                    
+                    # 現在の発話IDに対応する音声ファイルを取得
+                    wav_path = None
+                    utterance_to_play = None
+                    
+                    # 現在のセッションに属する発話IDの音声ファイルを探す
+                    if hasattr(self, 'session_id') and self.session_id:
+                        for utt_id, file_path in self.utterance_audio_map.items():
+                            if utt_id.startswith(self.session_id):
+                                wav_path = file_path
+                                utterance_to_play = utt_id
+                                break
+                    
+                    # セッションIDが一致しない古い応答は無視
+                    if wav_path and utterance_to_play:
+                        sys.stdout.write(f"[TT] 現セッションの応答を再生: {utterance_to_play}\n")
+                    else:
+                        # 現在のセッションに一致する応答がない
+                        wav_path = None  # 再生をスキップ
+                    
+                    if wav_path:
                         
                         # ファイルが実際に存在するか確認
                         if not os.path.exists(wav_path):
-                            sys.stdout.write(f"[ERROR] 音声ファイルが存在しません: {wav_path}\n")
-                            sys.stdout.flush()
-                            continue
+                            # ファイル待ちのタイムアウトチェック（最大3秒）
+                            if self.tt_wait_start_time and (time.time() - self.tt_wait_start_time) > 3.0:
+                                sys.stdout.write(f"[ERROR] 音声ファイル待機タイムアウト: {wav_path}\n")
+                                sys.stdout.flush()
+                                self.tt_waiting_for_synth = False
+                                self.tt_wait_start_time = None
+                                continue
+                            else:
+                                # まだタイムアウトしていない場合は次のループで再チェック
+                                last_handled_tt_time = None  # 再処理のためリセット
+                                continue
                             
                         try:
                             audio = AudioSegment.from_wav(wav_path)
@@ -261,17 +425,26 @@ class DialogManagement:
                         sys.stdout.write(f"[TT] 合成音声再生 duration_sec={duration_sec}\n")
                         sys.stdout.flush()
                         
-                        # macOSでの音声再生
+                        # 音声再生
                         try:
                             if sys.platform == "darwin":
                                 # macOSの場合はafplayを使用
-                                os.system(f"afplay '{wav_path}'")
-                            else:
-                                # macOS対応の音声再生
-                                if sys.platform == "darwin":
-                                    os.system(f"afplay '{wav_path}'")
+                                sys.stdout.write(f"[TT] 音声再生開始: afplay '{wav_path}'\n")
+                                sys.stdout.flush()
+                                result = os.system(f"afplay '{wav_path}'")
+                                if result != 0:
+                                    sys.stdout.write(f"[ERROR] afplay実行エラー: 終了コード {result}\n")
+                                    sys.stdout.flush()
                                 else:
-                                    playsound(wav_path, True)
+                                    sys.stdout.write(f"[TT] 音声再生完了\n")
+                                    sys.stdout.flush()
+                            else:
+                                # Linux/Windowsの場合
+                                sys.stdout.write(f"[TT] 音声再生開始: playsound '{wav_path}'\n")
+                                sys.stdout.flush()
+                                playsound(wav_path, True)
+                                sys.stdout.write(f"[TT] 音声再生完了\n")
+                                sys.stdout.flush()
                         except Exception as e:
                             sys.stdout.write(f"[ERROR] 音声再生エラー: {e}\n")
                             sys.stdout.flush()
@@ -281,16 +454,64 @@ class DialogManagement:
                         self.last_asr_update_time = None  # ASR更新時刻もリセット
                         self.user_speaking = False  # ユーザ発話フラグもリセット
                         self.last_significant_asr = ""  # 有意なASR結果もクリア
+                        self.last_requested_word = None  # 最後に要求した内容もクリア
+                        
+                        # 現在の発話IDを完了マークしてからクリア
+                        if self.current_utterance_id:
+                            self.completed_utterances.add(self.current_utterance_id)
+                            if self.current_utterance_id in self.pending_responses:
+                                del self.pending_responses[self.current_utterance_id]
+                            if self.current_utterance_id in self.utterance_audio_map:
+                                del self.utterance_audio_map[self.current_utterance_id]
+                        self.current_utterance_id = None  # 発話IDをクリア
                         last_response_end_time = time.time() + duration_sec
                         is_playing_response = True
                         next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
                         self.latest_synth_filename = ""
+                        self.tt_waiting_for_synth = False  # 待機状態をリセット
+                        self.tt_wait_start_time = None
                     else:
-                        # sys.stdout.write("[DEBUG] 合成音声ファイル名がまだありません（応答生成待ち）\n")
-                        if hasattr(self, 'latest_synth_filename'):
-                            pass  # print(f"[DEBUG DM] latest_synth_filename = '{self.latest_synth_filename}'")
-                        else:
-                            pass  # print("[DEBUG DM] latest_synth_filename属性が存在しません")
+                        # 音声ファイルがまだない場合は、待機を継続
+                        if self.tt_waiting_for_synth:
+                            # タイムアウトチェック
+                            if self.tt_wait_start_time and (time.time() - self.tt_wait_start_time) > 3.0:
+                                sys.stdout.write("[TT] 音声ファイル待機タイムアウト - 静的応答を使用\n")
+                                sys.stdout.flush()
+                                self.tt_waiting_for_synth = False
+                                self.tt_wait_start_time = None
+                                # 静的応答にフォールバック
+                                if self.static_response_files:
+                                    wav_path = self.static_response_files[self.static_response_index]
+                                    self.static_response_index = (self.static_response_index + 1) % len(self.static_response_files)
+                                    try:
+                                        audio = AudioSegment.from_wav(wav_path)
+                                        duration_sec = len(audio) / 1000.0
+                                        if sys.platform == "darwin":
+                                            os.system(f"afplay '{wav_path}'")
+                                        else:
+                                            playsound(wav_path, True)
+                                        sys.stdout.write(f"[TT] 静的応答再生完了\n")
+                                        sys.stdout.flush()
+                                        last_response_end_time = time.time() + duration_sec
+                                        is_playing_response = True
+                                    except Exception as e:
+                                        sys.stdout.write(f"[ERROR] 静的応答再生エラー: {e}\n")
+                                        sys.stdout.flush()
+                            else:
+                                # まだタイムアウトしていない場合は次のループで再チェック
+                                wait_time = time.time() - self.tt_wait_start_time
+                                # 待機ログを大幅に抑制（初回、1秒、2秒、3秒のみ出力）
+                                current_wait_second = int(wait_time)
+                                if not hasattr(self, '_last_wait_log_second'):
+                                    self._last_wait_log_second = -1
+                                
+                                if current_wait_second != self._last_wait_log_second and current_wait_second in [0, 1, 2, 3]:
+                                    sys.stdout.write(f"[TT] 音声ファイル待機中... ({current_wait_second}秒経過)\n")
+                                    sys.stdout.flush()
+                                    self._last_wait_log_second = current_wait_second
+                                
+                                last_handled_tt_time = None  # 再処理のためリセット
+                                continue
                 else:
                     # self.response_update = False  # ← この行が問題！無条件にFalseにしていた
                     pass
@@ -318,10 +539,17 @@ class DialogManagement:
                                     duration_sec = 2.0
                                 sys.stdout.write(f"[TT] 合成音声再生(pending) duration_sec={duration_sec}\n")
                                 sys.stdout.flush()
-                                # macOS対応の音声再生
+                                # 音声再生
                                 if sys.platform == "darwin":
-                                    os.system(f"afplay '{wav_path}'")
+                                    sys.stdout.write(f"[TT] 音声再生開始(pending): afplay '{wav_path}'\n")
+                                    sys.stdout.flush()
+                                    result = os.system(f"afplay '{wav_path}'")
+                                    if result != 0:
+                                        sys.stdout.write(f"[ERROR] afplay実行エラー: 終了コード {result}\n")
+                                        sys.stdout.flush()
                                 else:
+                                    sys.stdout.write(f"[TT] 音声再生開始(pending): playsound '{wav_path}'\n")
+                                    sys.stdout.flush()
                                     playsound(wav_path, True)
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.latest_synth_filename = ""
@@ -329,6 +557,7 @@ class DialogManagement:
                                 self.last_asr_update_time = None
                                 self.user_speaking = False
                                 self.last_significant_asr = ""
+                                self.last_requested_word = None
                                 last_response_end_time = time.time() + duration_sec
                                 is_playing_response = True
                                 next_back_channel_after_response = last_response_end_time + back_channel_cooldown_length
@@ -341,16 +570,24 @@ class DialogManagement:
                                     duration_sec = 2.0
                                 sys.stdout.write(f"[TT] 再生音声長 duration_sec={duration_sec}\n")
                                 sys.stdout.flush()
-                                # macOS対応の音声再生
+                                # 音声再生（静的応答）
                                 if sys.platform == "darwin":
-                                    os.system(f"afplay '{wav_path}'")
+                                    sys.stdout.write(f"[TT] 静的応答再生: afplay '{wav_path}'\n")
+                                    sys.stdout.flush()
+                                    result = os.system(f"afplay '{wav_path}'")
+                                    if result != 0:
+                                        sys.stdout.write(f"[ERROR] afplay実行エラー: 終了コード {result}\n")
+                                        sys.stdout.flush()
                                 else:
+                                    sys.stdout.write(f"[TT] 静的応答再生: playsound '{wav_path}'\n")
+                                    sys.stdout.flush()
                                     playsound(wav_path, True)
                                 self.asr_history = []  # ★TT応答再生直後のみ履歴を初期化
                                 self.response_request_sent = False
                                 self.last_asr_update_time = None
                                 self.user_speaking = False
                                 self.last_significant_asr = ""
+                                self.last_requested_word = None
                                 self.static_response_index += 1
                                 if self.static_response_index >= len(self.static_response_files):
                                     self.static_response_index = 0
@@ -375,13 +612,31 @@ class DialogManagement:
                     continue
                 if probability >= back_channel_threshold:
                     try:
-                        wav_path = f"static_back_channel_{random.randint(1, 2)}.wav"
+                        # 相槌ファイルのパスを正しく設定
+                        current_file_dir = os.path.dirname(os.path.abspath(__file__))
+                        wav_path = os.path.abspath(os.path.join(current_file_dir, f"../../DiaROS_ros/static_back_channel_{random.randint(1, 2)}.wav"))
+                        sys.stdout.write(f"[BC] 相槌ファイルパス: {wav_path}\n")
+                        sys.stdout.flush()
+                        
+                        if not os.path.exists(wav_path):
+                            sys.stdout.write(f"[ERROR] 相槌ファイルが存在しません: {wav_path}\n")
+                            sys.stdout.flush()
+                            last_handled_bc_time = bc_time
+                            continue
+                            
                         audio = AudioSegment.from_wav(wav_path)
                         duration_sec = len(audio) / 1000.0
-                        # macOS対応の音声再生
+                        # 相槌音声再生
                         if sys.platform == "darwin":
-                            os.system(f"afplay '{wav_path}'")
+                            sys.stdout.write(f"[BC] 相槌再生: afplay '{wav_path}'\n")
+                            sys.stdout.flush()
+                            result = os.system(f"afplay '{wav_path}'")
+                            if result != 0:
+                                sys.stdout.write(f"[ERROR] afplay実行エラー: 終了コード {result}\n")
+                                sys.stdout.flush()
                         else:
+                            sys.stdout.write(f"[BC] 相槌再生: playsound '{wav_path}'\n")
+                            sys.stdout.flush()
                             playsound(wav_path, True)
                         last_back_channel_time = time.time()
                         is_playing_backchannel = True
@@ -584,10 +839,10 @@ class DialogManagement:
             self.response_update = False
             self.word = ""  # wordもクリア
             
-            return { "words": words, "update": True}
+            return { "words": words, "update": True, "utterance_id": self.current_utterance_id}
         else:
             # 空の要求は送信しない（updateもFalseにする）
-            return { "words": [], "update": False}
+            return { "words": [], "update": False, "utterance_id": None}
 
     def updateASR(self, asr):
         # ここでASR結果の履歴を管理
@@ -609,6 +864,12 @@ class DialogManagement:
         if "filename" in ss and ss["filename"]:
             self.latest_synth_filename = ss["filename"]
             # print(f"[DEBUG DM] updateSS - filename受信: {self.latest_synth_filename}")
+            
+            # 発話IDがある場合はマッピングに追加
+            if "utterance_id" in ss and ss["utterance_id"]:
+                self.utterance_audio_map[ss["utterance_id"]] = ss["filename"]
+                # デバッグログを抑制（必要に応じてコメントアウトを解除）
+                # print(f"[DEBUG DM] 発話ID {ss['utterance_id']} → 音声ファイル {ss['filename']} をマッピング")
         # デバッグログを抑制（filenameが空の場合は正常動作）
         # print(f"[ROS2] {ss['timestamp']}")
         if self.ss["is_speaking"] is True:

@@ -46,7 +46,8 @@ class RosDialogManagement(Node):
         new = {
             "is_speaking": ss.is_speaking,
             "timestamp": ss.timestamp,
-            "filename": ss.filename  # ← 追加: 合成音声ファイル名を渡す
+            "filename": ss.filename,  # ← 追加: 合成音声ファイル名を渡す
+            "utterance_id": ss.utterance_id if hasattr(ss, 'utterance_id') else None  # 発話IDを追加
         }
         # print(f"[SSトピック受信] is_speaking: {new['is_speaking']} / timestamp: {new['timestamp']}")  # 確認用
         self.dialogManagement.updateSS(new)
@@ -82,10 +83,11 @@ class RosDialogManagement(Node):
         pub_dm_return = self.dialogManagement.pubDM()
         words = pub_dm_return['words']
         dm_result_update = pub_dm_return['update']
+        utterance_id = pub_dm_return.get('utterance_id', '')
 
         # デバッグログ追加
         if dm_result_update or (words and len(words) > 0):
-            print(f"[DEBUG ros2_dm] update={dm_result_update}, words={words}")
+            print(f"[DEBUG ros2_dm] update={dm_result_update}, words={words}, utterance_id={utterance_id}")
             sys.stdout.flush()
 
         # updateフラグがTrueかつwordsが空でない場合のみ送信
@@ -98,10 +100,13 @@ class RosDialogManagement(Node):
                 # 文字列でない要素がある場合は文字列に変換
                 dm.words = [str(w) if w is not None else "" for w in words]
             
+            # 発話IDを設定
+            dm.utterance_id = utterance_id if utterance_id else ""
+            
             # 最終チェック：空の文字列のみのリストは送信しない
             if any(w.strip() for w in dm.words):
                 self.pub_dm.publish(dm)
-                print(f"[ros2_dm] Published to NLG: {dm.words}")
+                print(f"[ros2_dm] Published to NLG: {dm.words} (ID: {dm.utterance_id})")
                 sys.stdout.flush()
         # else:
         #     # 空のメッセージは送信しない（ログも出力しない）

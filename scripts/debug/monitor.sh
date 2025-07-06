@@ -50,7 +50,7 @@ check_diaros_health() {
 show_menu() {
     echo ""
     echo "==================================="
-    echo "DiaROS Monitoring Tools"
+    echo "DiaROS Monitoring & Debug Tools"
     echo "==================================="
     echo "=== 基本ROS2ツール ==="
     echo "1. rqt (Full GUI Dashboard)"
@@ -65,24 +65,50 @@ show_menu() {
     echo "=== DiaROS専用モニタリング ==="
     echo "9. DiaROSシステムヘルスチェック"
     echo "10. 対話フロー監視 (リアルタイム)"
-    echo "11. 音声入力モニター (mic_audio_float32)"
-    echo "12. 音声認識モニター (ASR出力)"
-    echo "13. 対話状態総合モニター (全対話トピック)"
-    echo "14. ターンテイキングモニター (話者交代管理)"
-    echo "15. バックチャネルモニター (相槌応答)"
-    echo "16. 対話セッション録画 (全DiaROSトピック)"
-    echo "17. DiaROS対話フローグラフ表示"
+    echo "11. DiaROS対話フローデバッガー (debug_diaros_flow.py)"
+    echo "12. 音声入力モニター (mic_audio_float32)"
+    echo "13. 音声認識モニター (ASR出力)"
+    echo "14. 対話状態総合モニター (全対話トピック)"
+    echo "15. ターンテイキングモニター (話者交代管理)"
+    echo "16. バックチャネルモニター (相槌応答)"
+    echo "17. 対話セッション録画 (全DiaROSトピック)"
+    echo "18. DiaROS対話フローグラフ表示"
+    echo ""
+    echo "=== 個別モジュールテスト ==="
+    echo "19. ASR→DM対話フローテスト (test_asr_to_dm.py)"
+    echo "20. DM→NLG対話フローテスト (test_dm_flow.py)"
+    echo "21. NLG応答テスト (test_nlg_response.py)"
+    echo "22. ターンテイキングテスト (test_turn_taking.py)"
+    echo ""
+    echo "=== 音声デバイステスト ==="
+    echo "23. 簡易音声デバイステスト (test_audio_simple.py)"
+    echo "24. マイク設定・テスト (set_default_mic.py)"
+    echo "25. PyAudio PulseAudioテスト (test_pyaudio_pulse.py)"
+    echo ""
+    echo "=== システムテスト ==="
+    echo "26. DiaROS応答フローテスト (test_diaros_response.py)"
+    echo "27. API設定と応答生成テスト (test_api_nlg.py)"
+    echo "28. 高速日本語LLMベンチマーク (test_fast_llm.py)"
+    echo "29. OpenAI API直接テスト (test_openai_direct.py)"
     echo ""
     echo "=== 性能監視・デバッグツール ==="
-    echo "18. トピック周期監視 (ros2 topic hz)"
-    echo "19. 複数トピック同時周期監視"
-    echo "20. エンドツーエンド遅延測定"
-    echo "21. Plotjuggler起動 (リアルタイムグラフ)"
-    echo "22. 性能トレース記録 (ros2 trace)"
-    echo "23. システムリソース監視 (CPU/メモリ)"
-    echo "24. Exit"
+    echo "30. トピック周期監視 (ros2 topic hz)"
+    echo "31. 複数トピック同時周期監視"
+    echo "32. エンドツーエンド遅延測定"
+    echo "33. Plotjuggler起動 (リアルタイムグラフ)"
+    echo "34. 性能トレース記録 (ros2 trace)"
+    echo "35. システムリソース監視 (CPU/メモリ)"
+    echo ""
+    echo "=== ビルド・起動ツール ==="
+    echo "36. DiaROSビルド (build_diaros.sh)"
+    echo "37. DiaROSクリーンビルド (build_diaros.sh clean)"
+    echo "38. DiaROS起動 - 標準 (launch_diaros.sh)"
+    echo "39. DiaROS起動 - 静音版 (launch_diaros_quiet.sh)"
+    echo "40. DiaROS起動 - ChatGPT優先 (launch_diaros_chatgpt.sh)"
+    echo ""
+    echo "41. Exit"
     echo "==================================="
-    echo -n "選択してください [1-24]: "
+    echo -n "選択してください [1-41]: "
 }
 
 # 環境に応じた準備
@@ -202,44 +228,141 @@ while true; do
             read -r
             ;;
         11)
+            echo "DiaROS対話フローデバッガーを起動中..."
+            # スクリプトのパスを取得
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            # debug_diaros_flow.shを実行
+            "$SCRIPT_DIR/debug_diaros_flow.sh"
+            ;;
+        12)
             echo "音声入力を監視中... (Ctrl+Cで終了)"
             run_command "ros2 topic hz /mic_audio_float32"
             ;;
-        12)
+        13)
             echo "音声認識出力を監視中... (Ctrl+Cで終了)"
             run_command "ros2 topic echo /ASRtoNLU"
             ;;
-        13)
+        14)
             echo "総合対話モニターを起動中..."
             run_command "tmux new-session -d -s dialog_monitor && tmux split-window -h && tmux split-window -v && tmux select-pane -t 0 && tmux split-window -v && tmux send-keys -t 0 'ros2 topic echo /ASRtoNLU' C-m && tmux send-keys -t 1 'ros2 topic echo /DMtoNLG' C-m && tmux send-keys -t 2 'ros2 topic echo /TTtoDM' C-m && tmux send-keys -t 3 'ros2 topic echo /BCtoDM' C-m && tmux attach -t dialog_monitor"
             ;;
-        14)
+        15)
             echo "ターンテイキングを監視中... (Ctrl+Cで終了)"
             run_command "ros2 topic echo /TTtoDM"
             ;;
-        15)
+        16)
             echo "バックチャネル応答を監視中... (Ctrl+Cで終了)"
             run_command "ros2 topic echo /BCtoDM"
             ;;
-        16)
+        17)
             echo "DiaROS対話セッションを録画中..."
             timestamp=$(date +%Y%m%d_%H%M%S)
             echo "録画ファイル: diaros_dialog_$timestamp"
             echo "Ctrl+Cで録画を停止"
             run_command "ros2 bag record /mic_audio_float32 /AAtoDM /ASRtoNLU /NLUtoDM /DMtoNLG /NLGtoSS /SStoDM /TTtoDM /BCtoDM -o diaros_dialog_$timestamp"
             ;;
-        17)
+        18)
             echo "DiaROS対話フローグラフを生成中..."
             run_gui_command "rqt_graph"
             ;;
-        18)
-            echo "トピック周期を監視します。"
-            echo "監視したいトピック名を入力してください (/mic_audio_float32 など):"
-            read -r topic_name
-            echo "$topic_name の周期を監視中... (Ctrl+Cで終了)"
-            run_command "ros2 topic hz $topic_name"
-            ;;
         19)
+            echo "ASR→DM対話フローテストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$SCRIPT_DIR/test_asr_to_dm.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        20)
+            echo "DM→NLG対話フローテストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$SCRIPT_DIR/test_dm_flow.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        21)
+            echo "NLG応答テストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$SCRIPT_DIR/test_nlg_response.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        22)
+            echo "ターンテイキングテストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$SCRIPT_DIR/test_turn_taking.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        23)
+            echo "簡易音声デバイステストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/test_audio_simple.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        24)
+            echo "マイク設定・テストツールを起動中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/set_default_mic.py"
+            ;;
+        25)
+            echo "PyAudio PulseAudioテストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/test_pyaudio_pulse.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        26)
+            echo "DiaROS応答フローテストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/test_diaros_response.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        27)
+            echo "API設定と応答生成テストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/test_api_nlg.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        28)
+            echo "高速日本語LLMベンチマークを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/test_fast_llm.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        29)
+            echo "OpenAI API直接テストを実行中..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            cd "$PIXI_WS" && pixi run python3 "$DIAROS_ROOT/scripts/test/test_openai_direct.py"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        30)
             echo "複数トピックの周期を同時監視します。"
             echo "主要DiaROSトピックの周期を監視中... (Ctrl+Cで終了)"
             run_command "echo '=== 音声入力周期 ===' && timeout 5 ros2 topic hz /mic_audio_float32 & echo '' && echo '=== 音響解析周期 ===' && timeout 5 ros2 topic hz /AAtoDM & echo '' && echo '=== 音声認識周期 ===' && timeout 5 ros2 topic hz /ASRtoNLU & echo '' && echo '=== 音声合成周期 ===' && timeout 5 ros2 topic hz /SStoDM & wait"
@@ -247,13 +370,13 @@ while true; do
             echo "Enterキーを押して続行..."
             read -r
             ;;
-        20)
+        32)
             echo "エンドツーエンド遅延測定を開始します。"
             echo "音声入力から音声出力までの遅延を測定中..."
             echo "簡易的な監視を開始します (Ctrl+Cで終了)"
             run_command "ros2 topic echo /mic_audio_float32 --once && echo '音声認識結果:' && ros2 topic echo /ASRtoNLU --once"
             ;;
-        21)
+        33)
             echo "Plotjugglerを起動します..."
             if [[ "$OSTYPE" == "darwin"* ]]; then
                 echo "❌ PlotjugglerはmacOSでは利用できません。"
@@ -263,14 +386,14 @@ while true; do
                 run_gui_command "if command -v plotjuggler >/dev/null 2>&1; then plotjuggler; else echo 'Plotjugglerがインストールされていません。'; echo 'インストールコマンド: sudo apt install ros-humble-plotjuggler-ros'; fi"
             fi
             ;;
-        22)
+        34)
             echo "性能トレースを開始します。"
             echo "セッション名を入力してください:"
             read -r session_name
             echo "トレースを開始中... (Ctrl+Cで停止)"
             run_command "if command -v ros2 trace >/dev/null 2>&1; then ros2 trace start $session_name; else echo 'ros2-tracingがインストールされていません。'; echo 'インストールコマンド: sudo apt install ros-humble-tracing-tools-trace'; fi"
             ;;
-        23)
+        35)
             echo "システムリソースを監視中..."
             if [ "$is_docker" = true ]; then
                 run_command "echo 'DiaROSノードのCPU/メモリ使用状況:' && echo '================================' && ps aux | grep -E '(ros2|speech_input|acoustic_analysis|automatic_speech_recognition|dialog_management|speech_synthesis|turn_taking|back_channel)' | grep -v grep && echo '' && echo 'コンテナ全体のリソース使用状況:' && echo '================================' && top -b -n 1 | head -20"
@@ -287,7 +410,43 @@ while true; do
             echo "Enterキーを押して続行..."
             read -r
             ;;
-        24)
+        36)
+            echo "DiaROSをビルドします..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            "$DIAROS_ROOT/scripts/build/build_diaros.sh"
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        37)
+            echo "DiaROSをクリーンビルドします..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            "$DIAROS_ROOT/scripts/build/build_diaros.sh" clean
+            echo ""
+            echo "Enterキーを押して続行..."
+            read -r
+            ;;
+        38)
+            echo "DiaROSを起動します（標準）..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            "$DIAROS_ROOT/scripts/launch/launch_diaros.sh"
+            ;;
+        39)
+            echo "DiaROSを起動します（静音版）..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            "$DIAROS_ROOT/scripts/launch/launch_diaros_quiet.sh"
+            ;;
+        40)
+            echo "DiaROSを起動します（ChatGPT優先）..."
+            SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+            DIAROS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+            "$DIAROS_ROOT/scripts/launch/launch_diaros_chatgpt.sh"
+            ;;
+        41)
             echo "終了します..."
             exit 0
             ;;

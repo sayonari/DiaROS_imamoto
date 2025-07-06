@@ -608,7 +608,7 @@ curl -fsSL https://pixi.sh/install.sh | bash
 source ~/.zshrc  # または ~/.bashrc
 
 # プロジェクトディレクトリの作成
-mkdir -p ~/DiaROS_pixi && cd ~/DiaROS_pixi
+mkdir -p ~/_data/_DiaROS_mac/DiaROS_pixi && cd ~/_data/_DiaROS_mac/DiaROS_pixi
 
 # Pixiプロジェクトの初期化（Python 3.9を使用）
 pixi init diaros_workspace -c robostack-humble -c conda-forge
@@ -629,14 +629,14 @@ pixi add cython setuptools-scm
 
 ###### 3. DiaROSのクローン
 ```bash
-cd ~/DiaROS_pixi
+cd ~/_data/_DiaROS_mac/DiaROS_pixi
 git clone https://github.com/sayonari/DiaROS_imamoto.git
 ```
 
 ###### 4. Pixi環境でのPythonパッケージインストール
 ```bash
 # Pixi環境に入る
-cd ~/DiaROS_pixi/diaros_workspace
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
 pixi shell
 
 # 基本パッケージのインストール
@@ -664,6 +664,30 @@ pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 
 **詳細**: 📖 [docs/macos_pixi_ros2_setup.md](docs/macos_pixi_ros2_setup.md)
 
+##### 言語生成モデルのダウンロード（初回のみ必須）
+
+DiaROSは高速なローカル言語生成のためGemma 2モデルを使用します。初回は事前ダウンロードが必要です：
+
+```bash
+# Pixi環境に入った状態で実行
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
+pixi shell
+
+# HuggingFaceへのアクセス設定
+# 1. https://huggingface.co/google/gemma-2-2b-it にアクセス
+# 2. "Agree and access repository"をクリック
+# 3. HuggingFace CLIでログイン
+huggingface-cli login
+
+# モデルダウンロードスクリプトを実行（約5GB）
+../DiaROS_imamoto/scripts/setup/download_gemma_model.sh
+```
+
+**注意**: 
+- Gemma 2モデルはHuggingFaceでのアクセス許可が必要です
+- ダウンロードには安定したインターネット接続が必要です
+- 軽量な代替モデル（rinna/japanese-gpt2-small）も利用可能です
+
 ##### DiaROSのビルドと起動（Pixi環境）
 
 ###### 5. ROS2パッケージのビルド
@@ -680,7 +704,7 @@ pip list | grep -E "aubio|pyaudio|torch|transformers|playsound|pydub"
 **手動ビルドの場合:**
 ```bash
 # Pixi環境でDiaROSディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # 環境変数の設定（重要）
 export Python3_ROOT_DIR=$CONDA_PREFIX
@@ -748,7 +772,7 @@ export HF_TOKEN=your_token_here
 ###### 8. DiaROSの起動
 ```bash
 # DiaROSディレクトリに移動
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 
 # 環境変数の設定
 export DIAROS_DEVICE=mps  # Apple Silicon GPUを使用
@@ -792,11 +816,11 @@ open -a "/Users/sayonari/_data/tools/VOICEVOX/VOICEVOX.app"
 # cd ~/Downloads/macos-x64 && ./run
 
 # 2. Pixi環境に入ってDiaROSを起動
-cd ~/DiaROS_pixi/diaros_workspace
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/diaros_workspace
 pixi shell
 
 # Pixi環境内で以下を実行
-cd ~/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
+cd ~/_data/_DiaROS_mac/DiaROS_pixi/DiaROS_imamoto/DiaROS_ros
 export DIAROS_DEVICE=mps
 export AMENT_PREFIX_PATH=$PWD/install/diaros_package:$PWD/install/interfaces:$AMENT_PREFIX_PATH
 export PYTHONPATH=$PWD/install/diaros_package/lib/python3.9/site-packages:$PWD/install/interfaces/lib/python3.9/site-packages:$PYTHONPATH
@@ -918,6 +942,26 @@ export DYLD_LIBRARY_PATH=$PWD/install/interfaces/lib:$DYLD_LIBRARY_PATH
    ```bash
    cd DiaROS_py
    python -m pip install . --user --force-reinstall
+   ```
+
+#### TT-SS同期問題（音声再生タイミング）
+前の発話の応答が再生される、または音声が再生されない場合：
+
+1. 発話IDベースの同期システムが導入されています
+2. メッセージインターフェースの更新が必要：
+   ```bash
+   cd DiaROS_ros
+   ./scripts/build/rebuild_interfaces.sh
+   colcon build --packages-select diaros_package
+   source ./install/local_setup.bash
+   ```
+
+3. デバッグログで発話IDの流れを確認：
+   ```bash
+   # 実行時のログで以下のような出力を確認
+   # [DM] 200msポーズ検出 - 応答生成要求: 'こんにちは' (ID: utt_1_1234567890)
+   # [DEBUG DM] 発話ID utt_1_1234567890 → 音声ファイル tmp/synthesis_xxx.wav をマッピング
+   # [DEBUG DM] TT判定時 - 発話ID: utt_1_1234567890, 音声ファイル: tmp/synthesis_xxx.wav
    ```
 
 ### 9.6 必要なモデルへのアクセス

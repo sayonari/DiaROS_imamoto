@@ -39,6 +39,14 @@ echo "📝 APIキーの取得方法:"
 echo "   OpenAI: https://platform.openai.com/api-keys"
 echo "   Anthropic: https://console.anthropic.com/settings/keys"
 echo ""
+echo "💡 ローカルモデル（APIキー不要）:"
+echo "   APIキーを設定しない場合、高速なローカルLLMが使用されます"
+echo "   - デフォルト: Gemma 2 (google/gemma-2-2b-it)"
+echo "   - 軽量版: export DIAROS_LLM_MODEL=rinna-small"
+echo ""
+echo "   Gemma 2を使用する場合は事前にモデルをダウンロード:"
+echo "   ./scripts/setup/download_gemma_model.sh"
+echo ""
 
 # API接続テスト機能
 if [ "$1" = "test" ]; then
