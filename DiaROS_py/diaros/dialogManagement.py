@@ -351,6 +351,8 @@ class DialogManagement:
                             self.last_requested_word = self.last_significant_asr
                             self.utterance_id = self.current_utterance_id
                             self.pending_responses[self.current_utterance_id] = self.word
+                            # 2秒ポーズ検出の無限ループを防ぐためにタイムスタンプをリセット
+                            self.last_asr_update_time = None
             
             # TTデータの判定・再生
             if self.latest_tt_data is not None and self.latest_tt_time != last_handled_tt_time:
